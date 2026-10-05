@@ -48,7 +48,7 @@ export default function MyCompletedTasks() {
     if (payout === 'failed' || payout === 'returned' || payout === 'cancelled') return { label: 'Payout Issue', tone: 'badge-cancelled', detail: payout === 'failed' ? 'The payout failed. Check your verified bank details and wait for retry or contact support.' : payout === 'returned' ? 'The payout was returned. Check your verified bank details and contact support if needed.' : 'The payout was cancelled. Check the task/payment status or contact support.' }
     if (s === 'runnerpaid' || payout === 'completed' || payout === 'paid') return { label: 'Paid', tone: 'badge-runner_paid', detail: t.payoutCompletedAt ? `Paid ${new Date(t.payoutCompletedAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Payout completed' }
     if (s === 'payoutpending' || payout === 'processing' || payout === 'pending' || payout === 'initiated') return { label: 'Payout Processing', tone: 'badge-draft', detail: 'Creator confirmed. Your payout is being processed.' }
-    if (s === 'completed') return { label: 'Awaiting Creator', tone: 'badge-completed', detail: 'You completed the task. The creator must confirm before payout is released.' }
+    if (s === 'awaitingconfirmation' || s === 'completed') return { label: 'Awaiting Creator', tone: 'badge-completed', detail: 'You completed the task. The creator has 24 hours to confirm or dispute. Silence automatically confirms the task and starts payout.' }
     return { label: t.status || 'Completed', tone: 'badge-completed', detail: 'Task completed.' }
   }
 
