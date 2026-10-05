@@ -121,25 +121,23 @@ async function assertMobileLayout(page: Page, route: string) {
         return /(auto|scroll)/.test(styles.overflowY) && el.scrollHeight > el.clientHeight
       }
 
-      let scroller: HTMLElement | null = document.scrollingElement as HTMLElement | null
       const anchor = document.querySelector('.admin-content') as HTMLElement | null
+      const scrollTargets = new Set<HTMLElement>()
 
-      if (anchor && isScrollable(anchor)) {
-        scroller = anchor
-      } else if (anchor) {
-        let parent = anchor.parentElement
-        while (parent) {
-          if (isScrollable(parent)) {
-            scroller = parent
-            break
-          }
-          parent = parent.parentElement
+      if (anchor) {
+        let current: HTMLElement | null = anchor
+        while (current) {
+          if (isScrollable(current)) scrollTargets.add(current)
+          current = current.parentElement
         }
       }
 
-      if (scroller) scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'auto' })
       const root = document.scrollingElement as HTMLElement | null
-      if (root) root.scrollTop = root.scrollHeight
+      if (root) scrollTargets.add(root)
+
+      for (const target of scrollTargets) {
+        target.scrollTop = target.scrollHeight
+      }
 
       // Scroll both the detected workspace container and the document root.
       // Do not call scrollIntoView on the page wrapper because that can move
