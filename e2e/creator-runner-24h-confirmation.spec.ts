@@ -27,10 +27,6 @@ async function getToken(page: Page) {
   return page.evaluate(() => localStorage.getItem('token'))
 }
 
-async function apiJson(response: Awaited<ReturnType<ReturnType<typeof request.newContext>['post']>>) {
-  try { return await response.json() } catch { return null }
-}
-
 test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', async ({ browser, page }) => {
   const creatorEmail = requireEnv('DFY_CREATOR_EMAIL', CREATOR_EMAIL)
   const creatorPassword = requireEnv('DFY_CREATOR_PASSWORD', CREATOR_PASSWORD)
