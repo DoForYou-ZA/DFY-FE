@@ -115,7 +115,7 @@ async function assertMobileLayout(page: Page, route: string) {
 
   const mobileNav = page.locator('.user-mobile-bottom-nav')
   if (await mobileNav.count()) {
-    await page.evaluate(() => {
+    await page.evaluate(async () => {
       const isScrollable = (el: HTMLElement) => {
         const styles = getComputedStyle(el)
         return /(auto|scroll)/.test(styles.overflowY) && el.scrollHeight > el.clientHeight
