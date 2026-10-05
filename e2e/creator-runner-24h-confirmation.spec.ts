@@ -154,7 +154,6 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
           const refreshedCard = findTaskCard()
           await expect(refreshedCard).toBeVisible({ timeout: 30_000 })
           await refreshedCard.getByRole('button', { name: /accept task/i }).click({ timeout: 10_000 })
-          await card.getByRole('button', { name: /accept task/i }).click({ timeout: 10_000 })
         }
       }
       await expect(acceptHeading).toBeVisible({ timeout: 30_000 })
