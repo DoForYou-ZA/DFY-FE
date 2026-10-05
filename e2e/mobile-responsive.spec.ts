@@ -124,7 +124,9 @@ async function assertMobileLayout(page: Page, route: string) {
       let scroller: HTMLElement | null = document.scrollingElement as HTMLElement | null
       const anchor = document.querySelector('.admin-content') as HTMLElement | null
 
-      if (anchor) {
+      if (anchor && isScrollable(anchor)) {
+        scroller = anchor
+      } else if (anchor) {
         let parent = anchor.parentElement
         while (parent) {
           if (isScrollable(parent)) {
