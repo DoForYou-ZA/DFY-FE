@@ -157,8 +157,15 @@ async function assertMobileLayout(page: Page, route: string) {
             const styles = getComputedStyle(el)
             const paddingBottom = parseFloat(styles.paddingBottom) || 0
             const borderBottom = parseFloat(styles.borderBottomWidth) || 0
+            // Some mobile pages reserve document end-space with a ::after
+            // spacer for the fixed bottom nav. That spacer is not painted
+            // page content and must not be treated as covered content.
+            const afterStyles = getComputedStyle(el, '::after')
+            const afterHeight = afterStyles.content !== 'none'
+              ? parseFloat(afterStyles.height) || 0
+              : 0
             return box.width > 0 && box.height > 0
-              ? box.bottom - paddingBottom - borderBottom
+              ? box.bottom - paddingBottom - borderBottom - afterHeight
               : 0
           })
           .filter(bottom => bottom > 0)
