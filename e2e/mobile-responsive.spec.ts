@@ -115,7 +115,28 @@ async function assertMobileLayout(page: Page, route: string) {
 
   const mobileNav = page.locator('.user-mobile-bottom-nav')
   if (await mobileNav.count()) {
-    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' }))
+    await page.evaluate(() => {
+      const isScrollable = (el: HTMLElement) => {
+        const styles = getComputedStyle(el)
+        return /(auto|scroll)/.test(styles.overflowY) && el.scrollHeight > el.clientHeight
+      }
+
+      let scroller: HTMLElement | null = document.scrollingElement as HTMLElement | null
+      const anchor = document.querySelector('.admin-content') as HTMLElement | null
+
+      if (anchor) {
+        let parent = anchor.parentElement
+        while (parent) {
+          if (isScrollable(parent)) {
+            scroller = parent
+            break
+          }
+          parent = parent.parentElement
+        }
+      }
+
+      if (scroller) scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'auto' })
+    })
     await page.waitForTimeout(150)
 
     const navBox = await mobileNav.boundingBox()
