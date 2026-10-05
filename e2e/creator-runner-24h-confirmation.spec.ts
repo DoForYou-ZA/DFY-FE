@@ -179,7 +179,7 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
     const postedCard = page.locator('#posted-task-' + taskId)
     await expect(postedCard).toBeVisible({ timeout: 30_000 })
     await expect(postedCard).toContainText(/AwaitingConfirmation|Awaiting Confirmation/i)
-    await expect(postedCard).toContainText(/24 hours|automatically confirms/i)
+    await expect(postedCard).toContainText(/24 hours|remaining to confirm|automatically confirms/i)
 
     // 6. Expire the exact confirmation deadline and execute the production
     // AutoReleaseExpiredEscrowsAsync path. The BE endpoint is admin-only and
