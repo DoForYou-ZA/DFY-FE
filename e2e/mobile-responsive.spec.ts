@@ -135,10 +135,22 @@ async function assertMobileLayout(page: Page, route: string) {
       const root = document.scrollingElement as HTMLElement | null
       if (root) scrollTargets.add(root)
 
-      for (let pass = 0; pass < 8; pass++) {
-        for (const target of scrollTargets) target.scrollTop = target.scrollHeight
-        window.scrollTo(0, document.documentElement.scrollHeight)
-        await new Promise(resolve => setTimeout(resolve, 100))
+      // The application enables smooth scrolling globally. For this structural
+      // assertion we need deterministic scroll-end coordinates, not an animation
+      // that can still be in flight when the measurement runs.
+      const html = document.documentElement
+      const previousBehavior = html.style.scrollBehavior
+      html.style.scrollBehavior = 'auto'
+      try {
+        for (let pass = 0; pass < 8; pass++) {
+          for (const target of scrollTargets) target.scrollTop = target.scrollHeight
+          if (root) root.scrollTop = root.scrollHeight
+          document.body.scrollTop = document.body.scrollHeight
+          window.scrollTo(0, document.documentElement.scrollHeight)
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+      } finally {
+        html.style.scrollBehavior = previousBehavior
       }
     })
     await page.waitForTimeout(100)
