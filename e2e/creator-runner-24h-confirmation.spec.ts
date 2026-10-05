@@ -104,7 +104,11 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
       await login(runnerPage, runnerEmail, runnerPassword)
       await runnerPage.goto('/tasks/browse', { waitUntil: 'domcontentloaded', timeout: 60_000 })
       const search = runnerPage.getByPlaceholder('Search tasks...')
-      await search.fill(taskName)
+      // The backend's available-task search matches task description and area,
+      // not taskName. Use the unique description token so the API and UI agree
+      // on the same newly-created task.
+      const browseSearch = String(unique)
+      await search.fill(browseSearch)
       await search.press('Enter')
       const acceptHeading = runnerPage.getByRole('heading', { name: /accept task/i })
       const findTaskCard = () => runnerPage.locator('.task-card').filter({ hasText: taskName }).first()
@@ -112,16 +116,30 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
       // Browse Tasks refreshes its result list after verification. Re-query the
       // card immediately before clicking so a React list refresh cannot leave
       // Playwright holding a detached DOM node.
-      let card = findTaskCard()
+      const runnerToken = await getToken(runnerPage)
+      expect(runnerToken).toBeTruthy()
+
+      // Wait on the source of truth first. Admin verification changes the task
+      // to Posted/EscrowHeld, and /tasks/available only exposes that state.
       await expect.poll(async () => {
-        if (await card.count()) return await card.isVisible().catch(() => false)
-        await runnerPage.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 })
-        const searchAgain = runnerPage.getByPlaceholder('Search tasks...')
-        await searchAgain.fill(taskName)
-        await searchAgain.press('Enter')
-        card = findTaskCard()
-        return await card.isVisible().catch(() => false)
+        const available = await api.get(
+          API_BASE_URL + '/tasks/available?page=1&pageSize=10&search=' + encodeURIComponent(browseSearch),
+          { headers: { Authorization: 'Bearer ' + runnerToken } }
+        )
+        if (!available.ok()) return false
+        const body = await available.json()
+        const list = body.tasks || body.data?.tasks || body.data?.Tasks || []
+        return Array.isArray(list) && list.some((t: any) => t.taskName === taskName)
       }, { timeout: 45_000, intervals: [500, 1000, 2000] }).toBe(true)
+
+      // Now that the API confirms the task is browseable, render the UI once
+      // and search using the same backend-supported field.
+      await runnerPage.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 })
+      const searchAgain = runnerPage.getByPlaceholder('Search tasks...')
+      await searchAgain.fill(browseSearch)
+      await searchAgain.press('Enter')
+      const card = findTaskCard()
+      await expect(card).toBeVisible({ timeout: 30_000 })
 
       try {
         await card.getByRole('button', { name: /accept task/i }).click({ timeout: 10_000 })
@@ -131,10 +149,11 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
         if (!(await acceptHeading.isVisible().catch(() => false))) {
           await runnerPage.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 })
           const searchAgain = runnerPage.getByPlaceholder('Search tasks...')
-          await searchAgain.fill(taskName)
+          await searchAgain.fill(browseSearch)
           await searchAgain.press('Enter')
-          card = findTaskCard()
-          await expect(card).toBeVisible({ timeout: 30_000 })
+          const refreshedCard = findTaskCard()
+          await expect(refreshedCard).toBeVisible({ timeout: 30_000 })
+          await refreshedCard.getByRole('button', { name: /accept task/i }).click({ timeout: 10_000 })
           await card.getByRole('button', { name: /accept task/i }).click({ timeout: 10_000 })
         }
       }
