@@ -47,6 +47,8 @@ export default function App() {
               <Route path="/tasks/browse" element={<BrowseErrands />} />
               <Route path="/payments/success" element={<PaymentSuccess />} />
               <Route path="/payments/cancelled" element={<PaymentCancelled />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancelled" element={<PaymentCancelled />} />
 
               <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
               <Route path="/activity" element={<RequireAuth><Activity /></RequireAuth>} />
