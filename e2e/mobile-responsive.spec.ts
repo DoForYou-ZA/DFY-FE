@@ -145,6 +145,24 @@ async function assertMobileLayout(page: Page, route: string) {
 
     const navBox = await mobileNav.boundingBox()
     if (navBox) {
+      // Browse Tasks is a real card grid inside the workspace shell. Measure its
+      // last rendered card directly; the shell's pseudo-element is only clearance
+      // and should not be mistaken for painted task content.
+      if (route === '/tasks/browse') {
+        const lastTaskCard = page.locator('.browse-page .tasks-grid .task-card').last()
+        if (await lastTaskCard.count()) {
+          const cardBox = await lastTaskCard.boundingBox()
+          expect(cardBox).not.toBeNull()
+          if (cardBox) {
+            expect(
+              cardBox.bottom,
+              `${route}: last task card is behind the fixed mobile navigation`
+            ).toBeLessThanOrEqual(navBox.y + 1)
+          }
+          return
+        }
+      }
+
       const contentBottom = await page.evaluate(() => {
         const spacerHeight = (el: Element) => {
           const styles = getComputedStyle(el, '::after')
