@@ -155,7 +155,7 @@ async function assertMobileLayout(page: Page, route: string) {
           expect(cardBox).not.toBeNull()
           if (cardBox) {
             expect(
-              cardBox.bottom,
+              cardBox.y + cardBox.height,
               `${route}: last task card is behind the fixed mobile navigation`
             ).toBeLessThanOrEqual(navBox.y + 1)
           }
