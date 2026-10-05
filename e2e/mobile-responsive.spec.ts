@@ -138,6 +138,12 @@ async function assertMobileLayout(page: Page, route: string) {
       }
 
       if (scroller) scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'auto' })
+
+      const content = document.querySelector('.admin-content') as HTMLElement | null
+      const lastContent = content?.lastElementChild as HTMLElement | null
+      if (lastContent) {
+        lastContent.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'auto' })
+      }
     })
     await page.waitForTimeout(150)
 
