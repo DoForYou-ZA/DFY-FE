@@ -87,7 +87,7 @@ export default function ActionRequired() {
               return (
                 <div id={`action-task-${task.taskId}`} key={task.taskId} className="task-card" style={{ border: '1px solid var(--border)' }}>
                   <div className="task-card-header">
-                    <span className={`badge ${completed ? 'badge-completed' : 'badge-draft'}`}>
+                    <span className={`badge ${awaitingConfirmation ? 'badge-completed' : 'badge-draft'}`}>
                       {awaitingConfirmation ? 'Awaiting Your Confirmation' : 'Payment Required'}
                     </span>
                     <div className="task-budget">{money(task.budget)}</div>
