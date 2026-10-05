@@ -162,7 +162,9 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
       await expect(runnerPage).toHaveURL(/\/tasks\/my-active/, { timeout: 30_000 })
 
       // 4. Runner marks the task complete through the real UI.
-      const activeCard = runnerPage.locator('.task-card').filter({ hasText: taskName }).first()
+      // My Active Tasks renders the API's title/description fields; taskName is
+      // not included in that response, so locate the same task by its description.
+      const activeCard = runnerPage.locator('.task-card').filter({ hasText: taskDescription }).first()
       await expect(activeCard).toBeVisible({ timeout: 30_000 })
       await activeCard.getByRole('button', { name: /mark as complete/i }).click()
       await expect(runnerPage.getByRole('heading', { name: /mark task complete/i })).toBeVisible()
