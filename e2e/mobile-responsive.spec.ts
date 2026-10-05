@@ -139,11 +139,9 @@ async function assertMobileLayout(page: Page, route: string) {
 
       if (scroller) scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'auto' })
 
-      const content = document.querySelector('.admin-content') as HTMLElement | null
-      const lastContent = content?.lastElementChild as HTMLElement | null
-      if (lastContent) {
-        lastContent.scrollIntoView({ block: 'end', inline: 'nearest', behavior: 'auto' })
-      }
+      // Scroll the actual page/container to its maximum extent. Do not call
+      // scrollIntoView on the page wrapper because that can move the document
+      // away from its true scroll end and make fixed-nav coverage flaky.
     })
     await page.waitForTimeout(150)
 
