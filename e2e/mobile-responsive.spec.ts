@@ -150,28 +150,40 @@ async function assertMobileLayout(page: Page, route: string) {
     const navBox = await mobileNav.boundingBox()
     if (navBox) {
       const contentBottom = await page.evaluate(() => {
+        const spacerHeight = (el: Element) => {
+          const styles = getComputedStyle(el, '::after')
+          return styles.content !== 'none' ? parseFloat(styles.height) || 0 : 0
+        }
+        const edge = (el: Element | null) => {
+          if (!el) return 0
+          const box = el.getBoundingClientRect()
+          const styles = getComputedStyle(el)
+          const paddingBottom = parseFloat(styles.paddingBottom) || 0
+          const borderBottom = parseFloat(styles.borderBottomWidth) || 0
+          return box.width > 0 && box.height > 0
+            ? box.bottom - paddingBottom - borderBottom - spacerHeight(el)
+            : 0
+        }
+
+        const adminContent = document.querySelector('.admin-content')
+        if (adminContent) {
+          // The workspace reserves bottom-nav clearance in two places:
+          // admin-content::after and the last direct child's padding-bottom.
+          // Neither is painted page content, so exclude both before checking
+          // whether the actual page content sits behind the fixed nav.
+          const lastChild = adminContent.lastElementChild
+          const adminEdge = edge(adminContent)
+          if (lastChild) {
+            return Math.max(0, adminEdge - spacerHeight(adminContent) -
+              (parseFloat(getComputedStyle(lastChild).paddingBottom) || 0))
+          }
+          return adminEdge
+        }
+
         const candidates = Array.from(document.querySelectorAll(
           '.admin-content > section, .admin-content > article, .admin-content > form, .admin-content > div'
         ))
-        const boxes = candidates
-          .map(el => {
-            const box = el.getBoundingClientRect()
-            const styles = getComputedStyle(el)
-            const paddingBottom = parseFloat(styles.paddingBottom) || 0
-            const borderBottom = parseFloat(styles.borderBottomWidth) || 0
-            // Some mobile pages reserve document end-space with a ::after
-            // spacer for the fixed bottom nav. That spacer is not painted
-            // page content and must not be treated as covered content.
-            const afterStyles = getComputedStyle(el, '::after')
-            const afterHeight = afterStyles.content !== 'none'
-              ? parseFloat(afterStyles.height) || 0
-              : 0
-            return box.width > 0 && box.height > 0
-              ? box.bottom - paddingBottom - borderBottom - afterHeight
-              : 0
-          })
-          .filter(bottom => bottom > 0)
-        return boxes.length ? Math.max(...boxes) : 0
+        return candidates.reduce((max, el) => Math.max(max, edge(el)), 0)
       })
       expect(
         contentBottom,
