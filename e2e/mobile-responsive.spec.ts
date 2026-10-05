@@ -170,16 +170,16 @@ async function assertMobileLayout(page: Page, route: string) {
           // Neither is painted page content, so exclude both before checking
           // whether the actual page content sits behind the fixed nav.
           const lastChild = adminContent.lastElementChild
-          const adminEdge = edge(adminContent)
           if (lastChild) {
+            // If admin-content is itself the scroll viewport, its bounding box
+            // describes the viewport rather than the painted page-content edge.
+            // Measure the actual page wrapper instead.
             const lastChildStyles = getComputedStyle(lastChild)
             const lastChildPadding = parseFloat(lastChildStyles.paddingBottom) || 0
-            // Pages such as /tasks/post reserve additional end-space on the
-            // page wrapper itself as well as the workspace container.
             const nestedAfter = spacerHeight(lastChild)
-            return Math.max(0, adminEdge - lastChildPadding - nestedAfter)
+            return Math.max(0, edge(lastChild) - lastChildPadding - nestedAfter)
           }
-          return adminEdge
+          return edge(adminContent)
         }
 
         const candidates = Array.from(document.querySelectorAll(
