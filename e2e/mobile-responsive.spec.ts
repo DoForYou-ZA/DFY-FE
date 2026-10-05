@@ -172,8 +172,12 @@ async function assertMobileLayout(page: Page, route: string) {
           const lastChild = adminContent.lastElementChild
           const adminEdge = edge(adminContent)
           if (lastChild) {
-            return Math.max(0, adminEdge -
-              (parseFloat(getComputedStyle(lastChild).paddingBottom) || 0))
+            const lastChildStyles = getComputedStyle(lastChild)
+            const lastChildPadding = parseFloat(lastChildStyles.paddingBottom) || 0
+            // Pages such as /tasks/post reserve additional end-space on the
+            // page wrapper itself as well as the workspace container.
+            const nestedAfter = spacerHeight(lastChild)
+            return Math.max(0, adminEdge - lastChildPadding - nestedAfter)
           }
           return adminEdge
         }
