@@ -106,10 +106,39 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
       const search = runnerPage.getByPlaceholder('Search tasks...')
       await search.fill(taskName)
       await search.press('Enter')
-      const card = runnerPage.locator('.task-card').filter({ hasText: taskName }).first()
-      await expect(card).toBeVisible({ timeout: 30_000 })
-      await card.getByRole('button', { name: /accept task/i }).click()
-      await expect(runnerPage.getByRole('heading', { name: /accept task/i })).toBeVisible()
+      const acceptHeading = runnerPage.getByRole('heading', { name: /accept task/i })
+      const findTaskCard = () => runnerPage.locator('.task-card').filter({ hasText: taskName }).first()
+
+      // Browse Tasks refreshes its result list after verification. Re-query the
+      // card immediately before clicking so a React list refresh cannot leave
+      // Playwright holding a detached DOM node.
+      let card = findTaskCard()
+      await expect.poll(async () => {
+        if (await card.count()) return await card.isVisible().catch(() => false)
+        await runnerPage.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 })
+        const searchAgain = runnerPage.getByPlaceholder('Search tasks...')
+        await searchAgain.fill(taskName)
+        await searchAgain.press('Enter')
+        card = findTaskCard()
+        return await card.isVisible().catch(() => false)
+      }, { timeout: 45_000, intervals: [500, 1000, 2000] }).toBe(true)
+
+      try {
+        await card.getByRole('button', { name: /accept task/i }).click({ timeout: 10_000 })
+      } catch {
+        // If the Browse Tasks list refreshed during the click, confirm whether
+        // the first click actually opened the modal before trying again.
+        if (!(await acceptHeading.isVisible().catch(() => false))) {
+          await runnerPage.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 })
+          const searchAgain = runnerPage.getByPlaceholder('Search tasks...')
+          await searchAgain.fill(taskName)
+          await searchAgain.press('Enter')
+          card = findTaskCard()
+          await expect(card).toBeVisible({ timeout: 30_000 })
+          await card.getByRole('button', { name: /accept task/i }).click({ timeout: 10_000 })
+        }
+      }
+      await expect(acceptHeading).toBeVisible({ timeout: 30_000 })
       await runnerPage.getByText(/I agree to the runner terms/i).click()
       await runnerPage.getByRole('button', { name: /^Accept Task$/ }).click()
       await expect(runnerPage).toHaveURL(/\/tasks\/my-active/, { timeout: 30_000 })
