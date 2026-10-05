@@ -47,9 +47,9 @@ export default function ActionRequired() {
 
   const actionTasks = useMemo(() => tasks.filter(t => {
     const s = normStatus(t.taskStatus)
-    if (filter === 'confirmation') return s === 'completed'
+    if (filter === 'confirmation') return s === 'awaitingconfirmation'
     if (filter === 'payments') return s === 'pendingpayment'
-    return s === 'completed' || s === 'pendingpayment'
+    return s === 'awaitingconfirmation' || s === 'pendingpayment'
   }), [tasks, filter])
 
   useEffect(() => {
@@ -82,13 +82,13 @@ export default function ActionRequired() {
         ) : (
           <div className="tasks-grid">
             {actionTasks.map(task => {
-              const completed = normStatus(task.taskStatus) === 'completed'
+              const awaitingConfirmation = normStatus(task.taskStatus) === 'awaitingconfirmation'
               const pendingPayment = normStatus(task.taskStatus) === 'pendingpayment' || normStatus(task.paymentStatus) === 'pending'
               return (
                 <div id={`action-task-${task.taskId}`} key={task.taskId} className="task-card" style={{ border: '1px solid var(--border)' }}>
                   <div className="task-card-header">
-                    <span className={`badge ${completed ? 'badge-completed' : 'badge-draft'}`}>
-                      {completed ? 'Awaiting Your Confirmation' : 'Payment Required'}
+                    <span className={`badge ${awaitingConfirmation ? 'badge-completed' : 'badge-draft'}`}>
+                      {awaitingConfirmation ? 'Awaiting Your Confirmation' : 'Payment Required'}
                     </span>
                     <div className="task-budget">{money(task.budget)}</div>
                   </div>
@@ -100,7 +100,7 @@ export default function ActionRequired() {
                       <div className="task-meta-item"><i className="fas fa-map-marker-alt" /><span>{task.area}</span></div>
                       {task.helperName && <div className="task-meta-item"><i className="fas fa-user" /><span>{task.helperName}</span></div>}
                     </div>
-                    {completed && <div className="alert alert-info mt-3"><i className="fas fa-lock" /> The runner marked this task complete. Review it and release the payout when satisfied.</div>}
+                    {awaitingConfirmation && <div className="alert alert-info mt-3"><i className="fas fa-clock" /> The runner marked this task complete. You have 24 hours to confirm or dispute. If you take no action, the task is automatically confirmed and the payout is initiated.</div>}
                     {pendingPayment && <div className="alert alert-warning mt-3"><i className="fas fa-credit-card" /> This task is waiting for its creator payment before it can go live.</div>}
                   </div>
                   <div className="task-card-footer">
@@ -108,10 +108,10 @@ export default function ActionRequired() {
                       <button className="btn btn-outline btn-sm" onClick={() => navigate(`/tasks/my-posted?taskId=${encodeURIComponent(task.taskId)}`)}>
                         <i className="fas fa-list" /> Open Task
                       </button>
-                      {completed && <button className="btn btn-primary btn-sm" onClick={() => navigate(`/tasks/my-posted?taskId=${encodeURIComponent(task.taskId)}&action=confirm`)}>
+                      {awaitingConfirmation && <button className="btn btn-primary btn-sm" onClick={() => navigate(`/tasks/my-posted?taskId=${encodeURIComponent(task.taskId)}&action=confirm`)}>
                         <i className="fas fa-check" /> Confirm & Pay Runner
                       </button>}
-                      {task.helperContact && completed && <a className="btn btn-outline btn-sm" href={`tel:${task.helperContact}`}><i className="fas fa-phone" /> Call</a>}
+                      {task.helperContact && awaitingConfirmation && <a className="btn btn-outline btn-sm" href={`tel:${task.helperContact}`}><i className="fas fa-phone" /> Call</a>}
                     </div>
                   </div>
                 </div>

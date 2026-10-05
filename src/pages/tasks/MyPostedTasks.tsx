@@ -8,6 +8,16 @@ import './MyPostedTasks.css'
 
 type Section = 'pendingPayment' | 'posted' | 'claimed' | 'completed' | 'runnerPaid'
 
+function normStatus(status?: string) { return (status || '').toLowerCase().replace(/[_ -]/g, '') }
+function confirmationTimeLeft(deadline?: string) {
+  if (!deadline) return null
+  const ms = new Date(deadline).getTime() - Date.now()
+  if (ms <= 0) return 'Automatic confirmation is due now'
+  const hours = Math.floor(ms / 3600000)
+  const minutes = Math.floor((ms % 3600000) / 60000)
+  return `${hours}h ${minutes}m remaining to confirm or dispute`
+}
+
 function getStatusBadge(status: string) {
   const s = status?.toLowerCase().replace(/ /g, '_')
   const map: Record<string, string> = { pendingpayment: 'badge-draft', draft: 'badge-draft', posted: 'badge-posted', claimed: 'badge-claimed', in_progress: 'badge-in_progress', completed: 'badge-completed', confirmed: 'badge-confirmed', runnerpaid: 'badge-runner_paid', runner_paid: 'badge-runner_paid', cancelled: 'badge-cancelled' }
@@ -44,6 +54,7 @@ export default function MyPostedTasks() {
   const [ratingError, setRatingError] = useState('')
   const [ratedTaskIds, setRatedTaskIds] = useState<Set<string>>(new Set())
   const [detailsModal, setDetailsModal] = useState<Task | null>(null)
+  const [, setClock] = useState(0)
 
   const loadTasks = async () => {
     try {
@@ -57,23 +68,28 @@ export default function MyPostedTasks() {
   useEffect(() => { loadTasks() }, [])
 
   useEffect(() => {
+    const timer = window.setInterval(() => setClock(v => v + 1), 60000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
     const target = searchParams.get('taskId')
     if (!target || loading || tasks.length === 0) return
     const task = tasks.find(t => String(t.taskId) === target)
     if (!task) return
-    const status = task.taskStatus?.toLowerCase() || ''
-    const section: Section = status === 'completed' ? 'completed' : ['claimed', 'in_progress'].includes(status) ? 'claimed' : status === 'posted' ? 'posted' : 'pendingPayment'
+    const status = normStatus(task.taskStatus)
+    const section: Section = status === 'awaitingconfirmation' ? 'completed' : status === 'completed' ? 'completed' : ['claimed', 'in_progress'].includes(status) ? 'claimed' : status === 'posted' ? 'posted' : 'pendingPayment'
     setExpanded(e => ({ ...e, [section]: true }))
     requestAnimationFrame(() => document.getElementById(`posted-task-${target}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
-    if (searchParams.get('action') === 'confirm' && status === 'completed') setConfirmModal(task)
+    if (searchParams.get('action') === 'confirm' && status === 'awaitingconfirmation') setConfirmModal(task)
   }, [searchParams, loading, tasks])
 
   const grouped = {
-    pendingPayment: tasks.filter(t => t.taskStatus?.toLowerCase() === 'pendingpayment'),
-    posted: tasks.filter(t => t.taskStatus?.toLowerCase() === 'posted'),
-    claimed: tasks.filter(t => ['claimed', 'in_progress'].includes(t.taskStatus?.toLowerCase() || '')),
-    completed: tasks.filter(t => t.taskStatus?.toLowerCase() === 'completed'),
-    runnerPaid: tasks.filter(t => ['runnerpaid', 'runner_paid', 'confirmed', 'payoutpending'].includes(t.taskStatus?.toLowerCase() || '')),
+    pendingPayment: tasks.filter(t => normStatus(t.taskStatus) === 'pendingpayment'),
+    posted: tasks.filter(t => normStatus(t.taskStatus) === 'posted'),
+    claimed: tasks.filter(t => ['claimed', 'inprogress'].includes(normStatus(t.taskStatus))),
+    completed: tasks.filter(t => normStatus(t.taskStatus) === 'awaitingconfirmation'),
+    runnerPaid: tasks.filter(t => ['runnerpaid', 'confirmed', 'payoutpending'].includes(normStatus(t.taskStatus))),
   }
 
   const toggle = (s: Section) => setExpanded(e => ({ ...e, [s]: !e[s] }))
@@ -145,7 +161,7 @@ export default function MyPostedTasks() {
                     <h3 className="task-title">{task.taskName || task.taskDescription}</h3>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '2.4em' }}>{task.taskName ? task.taskDescription : ''}</p>
                     <div className="task-meta"><div className="task-meta-item"><i className="fas fa-tag" /><span>{task.category || 'General'}</span></div><div className="task-meta-item"><i className="fas fa-calendar" /><span>{new Date(task.createdAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div><div className="task-meta-item"><i className="fas fa-map-marker-alt" /><span>{task.area?.length > 30 ? task.area.substring(0, 30) + '...' : task.area}</span></div></div>
-                    {task.helperName ? <div className="runner-info"><div className="runner-avatar">{getInitials(task.helperName)}</div><div><div className="runner-name">{task.helperName}</div><div className="runner-contact">{task.helperContact}</div></div></div> : <div className="runner-info runner-info--empty"><div className="runner-avatar runner-avatar--empty"><i className="fas fa-user" /></div><div className="runner-name" style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.8rem' }}>No runner yet</div></div>}
+                    {key === 'completed' && <div className="alert alert-info mt-3"><i className="fas fa-clock" /> {confirmationTimeLeft(task.escrowHoldUntil) || 'You have 24 hours from completion to confirm or dispute. Silence automatically confirms the task.'}</div>}{task.helperName ? <div className="runner-info"><div className="runner-avatar">{getInitials(task.helperName)}</div><div><div className="runner-name">{task.helperName}</div><div className="runner-contact">{task.helperContact}</div></div></div> : <div className="runner-info runner-info--empty"><div className="runner-avatar runner-avatar--empty"><i className="fas fa-user" /></div><div className="runner-name" style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.8rem' }}>No runner yet</div></div>}
                   </div>
                   <div className="task-card-footer">
                     {key === 'pendingPayment' && <div className="action-row"><button className="btn btn-outline btn-sm" onClick={() => { handlePostErrand(); navigate(`/tasks/post?edit=${task.taskId}`) }}><i className="fas fa-edit" /> Edit</button><button className="btn btn-danger btn-sm" onClick={() => { setCancelModal(task); setCancelMessage('') }}><i className="fas fa-times" /> Cancel</button><button className="btn btn-primary btn-sm" onClick={() => handlePayNow(task.taskId)}><i className="fas fa-credit-card" /> Pay with Ozow</button></div>}
@@ -159,7 +175,7 @@ export default function MyPostedTasks() {
           ))}
         </div>
 
-        {confirmModal && <div className="modal-overlay" onClick={() => setConfirmModal(null)}><div className="modal-box" onClick={e => e.stopPropagation()}><div className="modal-header"><h3><i className="fas fa-check-circle" /> Confirm Task Completion</h3><button className="btn-close" onClick={() => setConfirmModal(null)}><i className="fas fa-times" /></button></div><div className="modal-body"><p>Are you satisfied with the completion of:</p><p className="mt-2"><strong>{confirmModal.taskDescription}</strong></p><div className="alert alert-info mt-3"><i className="fas fa-info-circle" /> Confirming will release the runner's 85% payout to their verified bank account through Ozow.</div></div>{actionError && <p style={{ color: 'var(--danger)', fontSize: '0.85rem', padding: '0 1.5rem 0.5rem' }}>{actionError}</p>}<div className="modal-footer"><button className="btn btn-secondary" onClick={() => { setConfirmModal(null); setActionError('') }}>Cancel</button><button className="btn btn-primary" onClick={handleConfirm} disabled={actionLoading}>{actionLoading ? <><span className="spinner spinner-sm" /> Processing...</> : 'Confirm & Release Payout'}</button></div></div></div>}
+        {confirmModal && <div className="modal-overlay" onClick={() => setConfirmModal(null)}><div className="modal-box" onClick={e => e.stopPropagation()}><div className="modal-header"><h3><i className="fas fa-check-circle" /> Confirm Task Completion</h3><button className="btn-close" onClick={() => setConfirmModal(null)}><i className="fas fa-times" /></button></div><div className="modal-body"><p>Are you satisfied with the completion of:</p><p className="mt-2"><strong>{confirmModal.taskDescription}</strong></p><div className="alert alert-info mt-3"><i className="fas fa-info-circle" /> You are confirming that the runner completed the task. This releases the runner's payout through Ozow. If there is a problem, close this dialog and raise a dispute instead. If you take no action for 24 hours, DFY automatically confirms the task.</div></div>{actionError && <p style={{ color: 'var(--danger)', fontSize: '0.85rem', padding: '0 1.5rem 0.5rem' }}>{actionError}</p>}<div className="modal-footer"><button className="btn btn-secondary" onClick={() => { setConfirmModal(null); setActionError('') }}>Cancel</button><button className="btn btn-primary" onClick={handleConfirm} disabled={actionLoading}>{actionLoading ? <><span className="spinner spinner-sm" /> Processing...</> : 'Confirm & Release Payout'}</button></div></div></div>}
 
         {cancelModal && <div className="modal-overlay" onClick={() => { if (!cancelLoading) { setCancelModal(null); setCancelMessage('') } }}><div className="modal-box" onClick={e => e.stopPropagation()}><div className="modal-header"><h3><i className="fas fa-times-circle" /> Cancel Task</h3><button className="btn-close" onClick={() => { setCancelModal(null); setCancelMessage('') }}><i className="fas fa-times" /></button></div><div className="modal-body">{cancelMessage ? <div className={`alert ${cancelMessage.includes('Failed') ? 'alert-error' : 'alert-success'}`}><i className={`fas fa-${cancelMessage.includes('Failed') ? 'exclamation-circle' : 'check-circle'}`} /> {cancelMessage}</div> : <><p style={{ fontWeight: 600, marginBottom: '1rem', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{cancelModal.taskName || cancelModal.taskDescription}</p>{cancelModal.taskStatus?.toLowerCase() === 'pendingpayment' && <div className="alert alert-info"><i className="fas fa-info-circle" /> No payment was made. This task will be removed at no cost.</div>}{cancelModal.taskStatus?.toLowerCase() === 'posted' && <div className="alert alert-info"><i className="fas fa-info-circle" /> This task is paid and live. Cancellation/refund handling is controlled by DFY's payment policy.</div>}{cancelModal.taskStatus?.toLowerCase() === 'claimed' && <div className="alert alert-warning"><i className="fas fa-exclamation-triangle" /> A runner has already accepted this task. Cancellation may affect the escrow/payout state.</div>}</>}</div><div className="modal-footer">{cancelMessage && !cancelMessage.includes('Failed') ? <button className="btn btn-primary" onClick={() => { setCancelModal(null); setCancelMessage('') }}>Done</button> : <><button className="btn btn-secondary" onClick={() => { setCancelModal(null); setCancelMessage('') }} disabled={cancelLoading}>Keep Task</button><button className="btn btn-danger" onClick={handleCancel} disabled={cancelLoading}>{cancelLoading ? <><span className="spinner spinner-sm" /> Cancelling...</> : 'Yes, Cancel Task'}</button></>}</div></div></div>}
 

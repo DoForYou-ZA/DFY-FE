@@ -115,27 +115,83 @@ async function assertMobileLayout(page: Page, route: string) {
 
   const mobileNav = page.locator('.user-mobile-bottom-nav')
   if (await mobileNav.count()) {
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-    await page.waitForTimeout(150)
+    await page.evaluate(async () => {
+      const isScrollable = (el: HTMLElement) => {
+        const styles = getComputedStyle(el)
+        return /(auto|scroll)/.test(styles.overflowY) && el.scrollHeight > el.clientHeight
+      }
+
+      const anchor = document.querySelector('.admin-content') as HTMLElement | null
+      const scrollTargets = new Set<HTMLElement>()
+
+      if (anchor) {
+        let current: HTMLElement | null = anchor
+        while (current) {
+          if (isScrollable(current)) scrollTargets.add(current)
+          current = current.parentElement
+        }
+      }
+
+      const root = document.scrollingElement as HTMLElement | null
+      if (root) scrollTargets.add(root)
+
+      for (let pass = 0; pass < 8; pass++) {
+        for (const target of scrollTargets) {
+          target.scrollTop = target.scrollHeight
+        }
+        // Authenticated pages such as the profile fetch data after navigation.
+        // Re-scroll after layout settles so late content growth cannot leave the
+        // viewport above the true end of the scroll container.
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+
+      // Scroll both the detected workspace container and the document root.
+      // Do not call scrollIntoView on the page wrapper because that can move
+      // the document away from its true scroll end and make fixed-nav coverage flaky.
+    })
+    await page.waitForTimeout(100)
 
     const navBox = await mobileNav.boundingBox()
     if (navBox) {
       const contentBottom = await page.evaluate(() => {
+        const spacerHeight = (el: Element) => {
+          const styles = getComputedStyle(el, '::after')
+          return styles.content !== 'none' ? parseFloat(styles.height) || 0 : 0
+        }
+        const edge = (el: Element | null) => {
+          if (!el) return 0
+          const box = el.getBoundingClientRect()
+          const styles = getComputedStyle(el)
+          const paddingBottom = parseFloat(styles.paddingBottom) || 0
+          const borderBottom = parseFloat(styles.borderBottomWidth) || 0
+          return box.width > 0 && box.height > 0
+            ? box.bottom - paddingBottom - borderBottom - spacerHeight(el)
+            : 0
+        }
+
+        const adminContent = document.querySelector('.admin-content')
+        if (adminContent) {
+          // The workspace reserves bottom-nav clearance in two places:
+          // admin-content::after and the last direct child's padding-bottom.
+          // Neither is painted page content, so exclude both before checking
+          // whether the actual page content sits behind the fixed nav.
+          const lastChild = adminContent.lastElementChild
+          if (lastChild) {
+            // If admin-content is itself the scroll viewport, its bounding box
+            // describes the viewport rather than the painted page-content edge.
+            // Measure the actual page wrapper instead.
+            const lastChildStyles = getComputedStyle(lastChild)
+            const lastChildPadding = parseFloat(lastChildStyles.paddingBottom) || 0
+            const nestedAfter = spacerHeight(lastChild)
+            return Math.max(0, edge(lastChild) - lastChildPadding - nestedAfter)
+          }
+          return edge(adminContent)
+        }
+
         const candidates = Array.from(document.querySelectorAll(
           '.admin-content > section, .admin-content > article, .admin-content > form, .admin-content > div'
         ))
-        const boxes = candidates
-          .map(el => {
-            const box = el.getBoundingClientRect()
-            const styles = getComputedStyle(el)
-            const paddingBottom = parseFloat(styles.paddingBottom) || 0
-            const borderBottom = parseFloat(styles.borderBottomWidth) || 0
-            return box.width > 0 && box.height > 0
-              ? box.bottom - paddingBottom - borderBottom
-              : 0
-          })
-          .filter(bottom => bottom > 0)
-        return boxes.length ? Math.max(...boxes) : 0
+        return candidates.reduce((max, el) => Math.max(max, edge(el)), 0)
       })
       expect(
         contentBottom,
