@@ -174,7 +174,7 @@ async function assertMobileLayout(page: Page, route: string) {
           const lastChild = adminContent.lastElementChild
           const adminEdge = edge(adminContent)
           if (lastChild) {
-            return Math.max(0, adminEdge - spacerHeight(adminContent) -
+            return Math.max(0, adminEdge -
               (parseFloat(getComputedStyle(lastChild).paddingBottom) || 0))
           }
           return adminEdge
