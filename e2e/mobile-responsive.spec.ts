@@ -138,10 +138,12 @@ async function assertMobileLayout(page: Page, route: string) {
       }
 
       if (scroller) scroller.scrollTo({ top: scroller.scrollHeight, behavior: 'auto' })
+      const root = document.scrollingElement as HTMLElement | null
+      if (root) root.scrollTop = root.scrollHeight
 
-      // Scroll the actual page/container to its maximum extent. Do not call
-      // scrollIntoView on the page wrapper because that can move the document
-      // away from its true scroll end and make fixed-nav coverage flaky.
+      // Scroll both the detected workspace container and the document root.
+      // Do not call scrollIntoView on the page wrapper because that can move
+      // the document away from its true scroll end and make fixed-nav coverage flaky.
     })
     await page.waitForTimeout(150)
 
