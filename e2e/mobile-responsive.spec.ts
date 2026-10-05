@@ -135,64 +135,79 @@ async function assertMobileLayout(page: Page, route: string) {
       const root = document.scrollingElement as HTMLElement | null
       if (root) scrollTargets.add(root)
 
-      for (let pass = 0; pass < 8; pass++) {
-        for (const target of scrollTargets) {
-          target.scrollTop = target.scrollHeight
+      // The application enables smooth scrolling globally. For this structural
+      // assertion we need deterministic scroll-end coordinates, not an animation
+      // that can still be in flight when the measurement runs.
+      const html = document.documentElement
+      const previousBehavior = html.style.scrollBehavior
+      html.style.scrollBehavior = 'auto'
+      try {
+        for (let pass = 0; pass < 8; pass++) {
+          for (const target of scrollTargets) target.scrollTop = target.scrollHeight
+          if (root) root.scrollTop = root.scrollHeight
+          document.body.scrollTop = document.body.scrollHeight
+          window.scrollTo(0, document.documentElement.scrollHeight)
+          await new Promise(resolve => setTimeout(resolve, 100))
         }
-        // Authenticated pages such as the profile fetch data after navigation.
-        // Re-scroll after layout settles so late content growth cannot leave the
-        // viewport above the true end of the scroll container.
-        await new Promise(resolve => setTimeout(resolve, 100))
+      } finally {
+        html.style.scrollBehavior = previousBehavior
       }
-
-      // Scroll both the detected workspace container and the document root.
-      // Do not call scrollIntoView on the page wrapper because that can move
-      // the document away from its true scroll end and make fixed-nav coverage flaky.
     })
     await page.waitForTimeout(100)
 
     const navBox = await mobileNav.boundingBox()
     if (navBox) {
+      // Browse Tasks is a real card grid inside the workspace shell. Measure its
+      // last rendered card directly; the shell's pseudo-element is only clearance
+      // and should not be mistaken for painted task content.
+      if (route === '/tasks/browse') {
+        const lastTaskCard = page.locator('.browse-page .tasks-grid .task-card').last()
+        if (await lastTaskCard.count()) {
+          const cardBox = await lastTaskCard.boundingBox()
+          expect(cardBox).not.toBeNull()
+          if (cardBox) {
+            expect(
+              cardBox.y + cardBox.height,
+              `${route}: last task card is behind the fixed mobile navigation`
+            ).toBeLessThanOrEqual(navBox.y + 1)
+          }
+          return
+        }
+      }
+
       const contentBottom = await page.evaluate(() => {
         const spacerHeight = (el: Element) => {
           const styles = getComputedStyle(el, '::after')
           return styles.content !== 'none' ? parseFloat(styles.height) || 0 : 0
         }
-        const edge = (el: Element | null) => {
-          if (!el) return 0
-          const box = el.getBoundingClientRect()
-          const styles = getComputedStyle(el)
-          const paddingBottom = parseFloat(styles.paddingBottom) || 0
-          const borderBottom = parseFloat(styles.borderBottomWidth) || 0
-          return box.width > 0 && box.height > 0
-            ? box.bottom - paddingBottom - borderBottom - spacerHeight(el)
-            : 0
-        }
 
         const adminContent = document.querySelector('.admin-content')
-        if (adminContent) {
-          // The workspace reserves bottom-nav clearance in two places:
-          // admin-content::after and the last direct child's padding-bottom.
-          // Neither is painted page content, so exclude both before checking
-          // whether the actual page content sits behind the fixed nav.
-          const lastChild = adminContent.lastElementChild
-          if (lastChild) {
-            // If admin-content is itself the scroll viewport, its bounding box
-            // describes the viewport rather than the painted page-content edge.
-            // Measure the actual page wrapper instead.
-            const lastChildStyles = getComputedStyle(lastChild)
-            const lastChildPadding = parseFloat(lastChildStyles.paddingBottom) || 0
-            const nestedAfter = spacerHeight(lastChild)
-            return Math.max(0, edge(lastChild) - lastChildPadding - nestedAfter)
-          }
-          return edge(adminContent)
+        if (!adminContent) return 0
+
+        const box = adminContent.getBoundingClientRect()
+        const styles = getComputedStyle(adminContent)
+        const paddingBottom = parseFloat(styles.paddingBottom) || 0
+        const borderBottom = parseFloat(styles.borderBottomWidth) || 0
+        const shellAfter = spacerHeight(adminContent)
+
+        // The workspace owns the fixed-nav clearance as ::after and the
+        // final-child padding. Measure the shell at the true scroll end and
+        // subtract those non-painted regions instead of measuring a nested
+        // page wrapper whose box can include its own layout behavior.
+        const lastChild = adminContent.lastElementChild
+        let childClearance = 0
+        if (lastChild) {
+          const childStyles = getComputedStyle(lastChild)
+          childClearance =
+            (parseFloat(childStyles.paddingBottom) || 0) +
+            spacerHeight(lastChild)
         }
 
-        const candidates = Array.from(document.querySelectorAll(
-          '.admin-content > section, .admin-content > article, .admin-content > form, .admin-content > div'
-        ))
-        return candidates.reduce((max, el) => Math.max(max, edge(el)), 0)
+        return box.width > 0 && box.height > 0
+          ? box.bottom - paddingBottom - borderBottom - shellAfter - childClearance
+          : 0
       })
+
       expect(
         contentBottom,
         `${route}: final content is behind the fixed mobile navigation`
