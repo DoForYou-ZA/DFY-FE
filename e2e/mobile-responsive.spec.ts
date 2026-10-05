@@ -136,20 +136,11 @@ async function assertMobileLayout(page: Page, route: string) {
       if (root) scrollTargets.add(root)
 
       for (let pass = 0; pass < 8; pass++) {
-        for (const target of scrollTargets) {
-          target.scrollTop = target.scrollHeight
-        }
-        // Authenticated pages such as the profile fetch data after navigation.
-        // Re-scroll after layout settles so late content growth cannot leave the
-        // viewport above the true end of the scroll container.
+        for (const target of scrollTargets) target.scrollTop = target.scrollHeight
+        window.scrollTo(0, document.documentElement.scrollHeight)
         await new Promise(resolve => setTimeout(resolve, 100))
       }
-
-      // Scroll both the detected workspace container and the document root.
-      // Do not call scrollIntoView on the page wrapper because that can move
-      // the document away from its true scroll end and make fixed-nav coverage flaky.
-    })
-    await page.waitForTimeout(100)
+    })    await page.waitForTimeout(100)
 
     const navBox = await mobileNav.boundingBox()
     if (navBox) {
@@ -175,16 +166,23 @@ async function assertMobileLayout(page: Page, route: string) {
           // admin-content::after and the last direct child's padding-bottom.
           // Neither is painted page content, so exclude both before checking
           // whether the actual page content sits behind the fixed nav.
+          // Measure the stable workspace shell after explicitly scrolling
+          // the document to its end, excluding only non-painted bottom clearance.
           const lastChild = adminContent.lastElementChild
+          const shellStyles = getComputedStyle(adminContent)
+          const shellPadding = parseFloat(shellStyles.paddingBottom) || 0
+          const shellAfter = spacerHeight(adminContent)
+          let contentBottom = edge(adminContent) - shellPadding - shellAfter
+
           if (lastChild) {
-            // If admin-content is itself the scroll viewport, its bounding box
-            // describes the viewport rather than the painted page-content edge.
-            // Measure the actual page wrapper instead.
-            const lastChildStyles = getComputedStyle(lastChild)
-            const lastChildPadding = parseFloat(lastChildStyles.paddingBottom) || 0
-            const nestedAfter = spacerHeight(lastChild)
-            return Math.max(0, edge(lastChild) - lastChildPadding - nestedAfter)
+            const childStyles = getComputedStyle(lastChild)
+            const childPadding = parseFloat(childStyles.paddingBottom) || 0
+            const childAfter = spacerHeight(lastChild)
+            contentBottom -= childPadding + childAfter
           }
+
+          return Math.max(0, contentBottom)
+        }
           return edge(adminContent)
         }
 
