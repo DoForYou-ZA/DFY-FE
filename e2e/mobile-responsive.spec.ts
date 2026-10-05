@@ -135,15 +135,21 @@ async function assertMobileLayout(page: Page, route: string) {
       const root = document.scrollingElement as HTMLElement | null
       if (root) scrollTargets.add(root)
 
-      for (const target of scrollTargets) {
-        target.scrollTop = target.scrollHeight
+      for (let pass = 0; pass < 8; pass++) {
+        for (const target of scrollTargets) {
+          target.scrollTop = target.scrollHeight
+        }
+        // Authenticated pages such as the profile fetch data after navigation.
+        // Re-scroll after layout settles so late content growth cannot leave the
+        // viewport above the true end of the scroll container.
+        await new Promise(resolve => setTimeout(resolve, 100))
       }
 
       // Scroll both the detected workspace container and the document root.
       // Do not call scrollIntoView on the page wrapper because that can move
       // the document away from its true scroll end and make fixed-nav coverage flaky.
     })
-    await page.waitForTimeout(150)
+    await page.waitForTimeout(100)
 
     const navBox = await mobileNav.boundingBox()
     if (navBox) {
