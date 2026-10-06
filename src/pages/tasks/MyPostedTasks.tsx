@@ -29,7 +29,7 @@ function getInitials(name: string) { return name?.split(' ').map(n => n[0]).join
 function isSafePaymentUrl(url: string) {
   try {
     const parsed = new URL(url)
-    return parsed.protocol === 'https:' && (parsed.hostname === 'stagingapi.ozow.com' || parsed.hostname === 'api.ozow.com' || parsed.hostname.endsWith('.ozow.com'))
+    return parsed.protocol === 'https:' && (parsed.hostname === 'checkout.paystack.com' || parsed.hostname === 'paystack.com' || parsed.hostname.endsWith('.paystack.com'))
   } catch { return false }
 }
 
