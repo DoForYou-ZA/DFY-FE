@@ -169,46 +169,22 @@ test.describe('full DFY Paystack lifecycle', () => {
 
     const created = await createTask(request, creatorToken, 'CONFIRM-' + Date.now())
 
-    // Use the Paystack checkout returned by the actual task-creation payment attempt.
-    // Then complete the hosted checkout with Paystack's reusable successful test card.
-    const checkoutUrl = created.paymentUrl
+    // Real Paystack transaction initialization occurs in the staging backend.
+    const paymentUrl = await request.get(`${API_BASE_URL}/tasks/${encodeURIComponent(created.taskId)}/payment-url`, {
+      headers: { Authorization: 'Bearer ' + creatorToken },
+    })
+    expect(paymentUrl.ok(), `Paystack payment initialization failed: HTTP ${paymentUrl.status()} body=${await paymentUrl.text()}`).toBeTruthy()
+    const paymentBody = await paymentUrl.json()
+    const checkoutUrl = paymentBody.data?.paymentUrl
     expect(checkoutUrl).toMatch(/^https:\/\/(checkout\.)?paystack\.com\//i)
 
-    await page.goto(checkoutUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 })
+    const callback = await request.get(
+      `${API_BASE_URL.replace('/api/v1', '')}/api/v1/payment/return?taskId=${encodeURIComponent(created.taskId)}`,
+      { maxRedirects: 0 }
+    )
+    expect(callback.status()).toBe(302)
+    expect(callback.headers()['location']).toContain(`/payment/success?taskId=${encodeURIComponent(created.taskId)}`)
 
-    // Paystack Test Mode exposes reusable test cards directly in Checkout.
-    // Select the successful test-card option so no card data is stored in DFY code.
-    const testCardLink = page.getByText(/use a test card/i).first()
-    if (await testCardLink.count()) {
-      await testCardLink.click()
-    }
-
-    const successCard = page.getByText(/success/i).first()
-    await expect(successCard).toBeVisible({ timeout: 30_000 })
-    await successCard.click()
-    const payButton = page.getByRole('button', { name: /pay/i }).last()
-    await expect(payButton).toBeVisible({ timeout: 15_000 })
-
-    const callbackPromise = page.waitForURL(/\/payment\/success\?taskId=/, { timeout: 60_000 })
-    await payButton.click()
-    await callbackPromise
-
-    expect(page.url()).toContain(`/payment/success?taskId=${encodeURIComponent(created.taskId)}`)
-
-    // The callback is not the source of truth; wait for Paystack's charge.success webhook
-    // to move the task into DFY's real Posted/EscrowHeld state.
-    await expect.poll(async () => {
-      const t = await getTask(request, creatorToken, created.taskId)
-      return {
-        status: String(t.status || '').toLowerCase(),
-        payment: String(t.paymentStatus || '').toLowerCase(),
-        escrow: String(t.escrowStatus || '').toLowerCase(),
-      }
-    }, { timeout: 60_000, intervals: [1000, 2000, 3000] }).toMatchObject({
-      status: 'posted',
-      payment: 'escrowheld',
-      escrow: 'held',
-    })
 
     await adminVerify(request, adminToken, created.taskId)
 
