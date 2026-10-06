@@ -30,6 +30,8 @@ async function apiLogin(api: APIRequestContext, email: string, password: string)
 }
 
 async function loginUi(page: Page, email: string, password: string) {
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 })
+  await page.evaluate(() => localStorage.clear())
   await page.goto('/login', { waitUntil: 'domcontentloaded', timeout: 60_000 })
   await page.getByPlaceholder('Email Address').fill(email)
   await page.getByPlaceholder('Password').fill(password)
