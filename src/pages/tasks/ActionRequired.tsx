@@ -23,9 +23,7 @@ export default function ActionRequired() {
     setLoading(true)
     setError('')
     try {
-      const res = await tasksApi.getMyPosted()
-      const inner = res.data?.data
-      const raw: Task[] = inner?.tasks || inner?.Tasks || []
+      const raw = await tasksApi.getMyPostedAll()
       setTasks(raw.map(t => ({
         ...t,
         taskName: DOMPurify.sanitize(t.taskName || '', { ALLOWED_TAGS: [] }),

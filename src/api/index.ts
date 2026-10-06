@@ -1,5 +1,5 @@
 import api from './client'
-import type { LoginModel, RegisterModel, AuthResponse } from '../types'
+import type { LoginModel, RegisterModel, AuthResponse, Task } from '../types'
 
 export const publicApi = {
   getStats: () => api.get('/public/stats'),
@@ -24,8 +24,24 @@ export const tasksApi = {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), ...filters })
     return api.get(`/tasks/available?${params}`)
   },
-  getMyPosted: () => api.get('/tasks/my-posted'),
-  getMyActive: () => api.get('/tasks/my-active'),
+  getMyPosted: (page = 1, pageSize = 10, taskId?: string) => api.get('/tasks/my-posted', { params: { page, pageSize, taskId } }),
+  getMyPostedAll: async (): Promise<Task[]> => {
+    const firstResponse = await api.get('/tasks/my-posted', { params: { page: 1, pageSize: 50 } })
+    const firstPage = firstResponse.data?.data
+    const tasks: Task[] = firstPage?.tasks || firstPage?.Tasks || []
+    const totalPages = Math.max(1, Number(firstPage?.totalPages ?? 1))
+    const remainingPages = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, index) =>
+        api.get('/tasks/my-posted', { params: { page: index + 2, pageSize: 50 } }),
+      ),
+    )
+    for (const response of remainingPages) {
+      const pageTasks = response.data?.data?.tasks || response.data?.data?.Tasks || []
+      tasks.push(...pageTasks)
+    }
+    return tasks
+  },
+  getMyActive: (page = 1, pageSize = 10, taskId?: string) => api.get('/tasks/my-active', { params: { page, pageSize, taskId } }),
   getMyCompleted: (page = 1, pageSize = 10, taskId?: string) => api.get('/tasks/my-completed', { params: { page, pageSize, taskId } }),
   getById: (id: string) => api.get(`/tasks/${id}`),
   create: (data: object) => api.post('/tasks', data),

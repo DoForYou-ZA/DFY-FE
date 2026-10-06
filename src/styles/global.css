@@ -344,6 +344,18 @@ img { max-width: 100%; height: auto; }
 .page-btn:hover:not(:disabled) { border-color: var(--primary); }
 .page-btn.active { background: var(--primary-gradient); color: #fff; border-color: var(--primary); }
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.clean-pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem; margin: 0.75rem 0 1.25rem; flex-wrap: wrap;
+}
+.clean-pagination-summary { color: var(--text-muted); font-size: 0.82rem; }
+.clean-pagination .pagination { gap: 0.35rem; padding: 0; }
+.clean-pagination-slot { display: inline-flex; align-items: center; gap: 0.35rem; }
+.clean-pagination-ellipsis { color: var(--text-muted); padding: 0 0.15rem; }
+@media (max-width: 576px) {
+  .clean-pagination { flex-direction: column; }
+  .clean-pagination .page-btn { width: 32px; height: 32px; }
+}
 
 /* ============================================
    Page header
@@ -1718,4 +1730,3 @@ html, body, #root {
     min-width: 0;
   }
 }
-

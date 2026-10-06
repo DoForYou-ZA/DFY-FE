@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { tasksApi, disputesApi, ratingsApi } from '../../api'
+import Pagination from '../../components/Pagination'
+
+const PAGE_SIZE = 10
 
 function getStatusBadge(status: string) {
   const s = status?.toLowerCase()
@@ -14,8 +17,13 @@ function getStatusBadge(status: string) {
 
 export default function MyActiveTasks() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalTasks, setTotalTasks] = useState(0)
   const [completeModal, setCompleteModal] = useState<any | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [disputeModal, setDisputeModal] = useState<any | null>(null)
@@ -31,16 +39,37 @@ export default function MyActiveTasks() {
   const [actionError, setActionError] = useState('')
   const [disputeError, setDisputeError] = useState('')
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async (targetPage = page, targetTaskId?: string) => {
+    setLoading(true)
+    setLoadError('')
     try {
-      const res = await tasksApi.getMyActive()
-      // API returns: { success, data: [ { id, taskId, title, description, category, location, budget, status, createdAt, dueDate, creatorName, creatorContact } ] }
-      const data = res.data?.data || []
-      setTasks(Array.isArray(data) ? data : [])
-    } catch { /* ignore */ } finally { setLoading(false) }
-  }
+      const res = await tasksApi.getMyActive(targetPage, PAGE_SIZE, targetTaskId)
+      const data = res.data?.data
+      const list = data?.tasks || data?.Tasks || (Array.isArray(data) ? data : [])
+      setTasks(Array.isArray(list) ? list : [])
+      setTotalTasks(Number(data?.count ?? list.length))
+      setTotalPages(Math.max(1, Number(data?.totalPages ?? 1)))
+      if (data?.page) setPage(Number(data.page))
+    } catch (err: any) {
+      setLoadError(err.response?.data?.message || 'Failed to load active tasks. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }, [page])
 
-  useEffect(() => { loadTasks() }, [])
+  const linkedTaskId = searchParams.get('taskId')
+  useEffect(() => {
+    void loadTasks(page, page === 1 ? linkedTaskId ?? undefined : undefined)
+  }, [linkedTaskId, loadTasks, page])
+
+  useEffect(() => {
+    if (!linkedTaskId || loading || !tasks.some(task => String(task.taskId) === linkedTaskId)) return
+    requestAnimationFrame(() => document.getElementById(`active-task-${linkedTaskId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+    setSearchParams(params => {
+      params.delete('taskId')
+      return params
+    }, { replace: true })
+  }, [linkedTaskId, loading, tasks, setSearchParams])
 
   const handleComplete = async () => {
     if (!completeModal) return
@@ -49,7 +78,7 @@ export default function MyActiveTasks() {
       const res = await tasksApi.complete(completeModal.taskId)
       if (res.data?.success === false) { setActionError(res.data?.message || 'Failed to mark complete'); return }
       setCompleteModal(null)
-      await loadTasks()
+      await loadTasks(page)
     } catch (err: any) {
       setActionError(err.response?.data?.message || 'Failed to mark complete')
     } finally { setActionLoading(false) }
@@ -64,7 +93,7 @@ export default function MyActiveTasks() {
       setDisputeModal(null)
       setDisputeIssue('')
       setDisputeCategory('General')
-      await loadTasks()
+      await loadTasks(page)
     } catch (err: any) {
       setDisputeError(err.response?.data?.message || 'Failed to raise dispute')
     } finally { setDisputeLoading(false) }
@@ -99,8 +128,6 @@ export default function MyActiveTasks() {
     userContact: t.creatorContact || t.userContact || '',
   })
 
-  if (loading) return <div className="loading-state"><div className="spinner" /><p>Loading your active tasks...</p></div>
-
   return (
     <div className="my-active-page active-tasks-page">
       <div className="page-header">
@@ -110,7 +137,8 @@ export default function MyActiveTasks() {
         </div>
       </div>
       <div className="container">
-        {tasks.length === 0 ? (
+        {loadError && <div className="alert alert-error mb-4" role="alert">{loadError} <button className="btn btn-secondary btn-sm" onClick={() => void loadTasks(page)}>Retry</button></div>}
+        {loading ? <div className="loading-state"><div className="spinner" /><p>Loading your active tasks...</p></div> : tasks.length === 0 ? (
           <div className="empty-state">
             <i className="fas fa-tasks" />
             <h3>No Active Tasks</h3>
@@ -122,7 +150,7 @@ export default function MyActiveTasks() {
             {tasks.map(raw => {
               const t = norm(raw)
               return (
-                <div key={t.taskId} className="task-card active-task-card">
+                <div id={`active-task-${t.taskId}`} key={t.taskId} className="task-card active-task-card">
                   <div className="task-card-header">
                     <span className={getStatusBadge(t.taskStatus)}>{t.taskStatus}</span>
                     <div className="task-budget">
@@ -168,6 +196,14 @@ export default function MyActiveTasks() {
             })}
           </div>
         )}
+        {!loading && <Pagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          totalCount={totalTasks}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          label="active tasks"
+        />}
       </div>
 
       {completeModal && (

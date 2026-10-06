@@ -3,9 +3,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { tasksApi } from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import type { Task } from '../../types'
+import Pagination from '../../components/Pagination'
 import './BrowseErrands.css'
 
 const CATEGORIES = ['Grocery Shopping', 'Delivery', 'Cleaning', 'Gardening', 'Moving', 'Repairs', 'Tutoring', 'Pet Care', 'Cooking', 'Other']
+const PAGE_SIZE = 10
 
 export default function BrowseErrands() {
   const { isAuthenticated, canAcceptTasks, isProfileIncomplete, user } = useAuth()
@@ -33,7 +35,7 @@ export default function BrowseErrands() {
       const filters: Record<string, string> = {}
       if (s) filters.search = s
       if (cat) filters.category = cat
-      const res = await tasksApi.getAvailable(p, 10, filters)
+      const res = await tasksApi.getAvailable(p, PAGE_SIZE, filters)
       const data = res.data
       const list = data.tasks || data.data || []
       setTasks(Array.isArray(list) ? list : [])
@@ -176,11 +178,14 @@ export default function BrowseErrands() {
             </article>
           ))}</div>}
 
-        {!loading && totalPages > 1 && <div className="pagination">
-          <button className="page-btn" disabled={page === 1} onClick={() => setPage(p => p - 1)}><i className="fas fa-chevron-left" /></button>
-          {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map(p => <button key={p} className={`page-btn ${page === p ? 'active' : ''}`} onClick={() => setPage(p)}>{p}</button>)}
-          <button className="page-btn" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}><i className="fas fa-chevron-right" /></button>
-        </div>}
+        {!loading && <Pagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          totalCount={totalItems}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          label="available tasks"
+        />}
       </div>
       </div>
 

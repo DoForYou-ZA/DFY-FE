@@ -3986,8 +3986,8 @@
 }
 
 .user-workspace-shell .active-tasks-page .tasks-grid {
-  grid-template-columns: minmax(0, 760px);
-  justify-content: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  justify-content: stretch;
   gap: .7rem;
 }
 
@@ -4145,36 +4145,6 @@
   padding: .48rem .6rem;
   font-size: .68rem;
   line-height: 1.35;
-}
-
-.user-workspace-shell .completed-tasks-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: .75rem;
-  margin: 0 0 .9rem;
-  padding: .7rem .9rem;
-  border: 1px solid #e7ebf1;
-  border-radius: 12px;
-  background: #fff;
-  color: #526071;
-  font-size: .82rem;
-}
-
-.user-workspace-shell .completed-tasks-pagination {
-  margin: .7rem 0 1.25rem;
-  padding: .5rem 0;
-}
-
-.user-workspace-shell .completed-page-slot {
-  display: inline-flex;
-  align-items: center;
-  gap: .45rem;
-}
-
-.user-workspace-shell .completed-page-ellipsis {
-  color: #718096;
-  font-size: .9rem;
 }
 
 .user-workspace-shell .browse-page .task-earnings {

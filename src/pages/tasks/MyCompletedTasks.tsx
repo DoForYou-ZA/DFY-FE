@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { tasksApi, ratingsApi, disputesApi } from '../../api'
+import Pagination from '../../components/Pagination'
+
+const PAGE_SIZE = 10
 
 export default function MyCompletedTasks() {
   const navigate = useNavigate()
@@ -27,7 +30,7 @@ export default function MyCompletedTasks() {
     setLoading(true)
     setLoadError('')
     try {
-      const response = await tasksApi.getMyCompleted(targetPage, 10, targetTaskId)
+      const response = await tasksApi.getMyCompleted(targetPage, PAGE_SIZE, targetTaskId)
       const result = response.data?.data
       const nextTotalPages = Math.max(1, Number(result?.totalPages ?? 1))
       setTasks(Array.isArray(result?.tasks) ? result.tasks : Array.isArray(result) ? result : [])
@@ -108,10 +111,6 @@ export default function MyCompletedTasks() {
     if (s === 'awaitingconfirmation' || s === 'completed') return { label: 'Awaiting Creator', tone: 'badge-completed', detail: 'You completed the task. The creator has 24 hours to confirm or dispute. Silence automatically confirms the task and starts payout.' }
     return { label: t.status || 'Completed', tone: 'badge-completed', detail: 'Task completed.' }
   }
-  const paginationPages = [...new Set([1, page - 1, page, page + 1, totalPages])]
-    .filter(pageNumber => pageNumber >= 1 && pageNumber <= totalPages)
-    .sort((a, b) => a - b)
-
   return (
     <div className="my-completed-page" style={{ paddingBottom: '3rem' }}>
       <div className="page-header">
@@ -122,7 +121,6 @@ export default function MyCompletedTasks() {
       </div>
       <div className="container">
         {loadError && <div className="alert alert-error mb-4" role="alert"><i className="fas fa-exclamation-circle" /> {loadError} <button className="btn btn-secondary btn-sm" onClick={() => void loadTasks(page)}>Retry</button></div>}
-        {totalTasks > 0 && <div className="completed-tasks-summary"><span>{totalTasks} completed task{totalTasks === 1 ? '' : 's'}</span><span>Page {page} of {totalPages}</span></div>}
         {loading ? (
           <div className="loading-state"><div className="spinner" /><p>Loading completed tasks...</p></div>
         ) : tasks.length === 0 && loadError ? null : tasks.length === 0 ? (
@@ -177,29 +175,14 @@ export default function MyCompletedTasks() {
             ))}
           </div>
         )}
-        {!loading && totalPages > 1 && (
-          <nav className="pagination completed-tasks-pagination" aria-label="Completed tasks pages">
-            <button className="page-btn" disabled={page <= 1} onClick={() => setPage(current => current - 1)} aria-label="Previous page">
-              <i className="fas fa-chevron-left" />
-            </button>
-            {paginationPages.map((pageNumber, index) => (
-              <span className="completed-page-slot" key={pageNumber}>
-                {index > 0 && pageNumber - paginationPages[index - 1] > 1 && <span className="completed-page-ellipsis" aria-hidden="true">…</span>}
-                <button
-                  className={`page-btn ${pageNumber === page ? 'active' : ''}`}
-                  onClick={() => setPage(pageNumber)}
-                  aria-current={pageNumber === page ? 'page' : undefined}
-                  aria-label={`Page ${pageNumber}`}
-                >
-                  {pageNumber}
-                </button>
-              </span>
-            ))}
-            <button className="page-btn" disabled={page >= totalPages} onClick={() => setPage(current => current + 1)} aria-label="Next page">
-              <i className="fas fa-chevron-right" />
-            </button>
-          </nav>
-        )}
+        {!loading && <Pagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          totalCount={totalTasks}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          label="completed tasks"
+        />}
       </div>
 
       {disputeModal && (

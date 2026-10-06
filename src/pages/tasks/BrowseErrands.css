@@ -111,9 +111,9 @@
 }
 
 .filters-row { display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap; }
-.search-wrapper { position: relative; flex: 1; min-width: 220px; }
+.search-wrapper { position: relative; flex: 1 1 0; width: 100%; min-width: 0; }
 .search-wrapper > i { position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-.search-wrapper .form-input { padding-left: 2.55rem; padding-right: 2.4rem; }
+.search-wrapper .form-input { display: block; box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; padding-left: 2.55rem; padding-right: 2.4rem; }
 .clear-search { position: absolute; right: 0.65rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0.25rem; border-radius: var(--radius-sm); }
 .clear-search:hover { background: var(--background-dark); }
 .filters-row .form-select { width: 205px; }

@@ -30,17 +30,16 @@ export default function UserDashboardShell({ children }: UserDashboardShellProps
       const conversations = Array.isArray(res.data?.data) ? res.data.data : []
       setConversationUnreadCount(conversations.reduce((sum: number, conversation: any) => sum + Number(conversation.unreadCount || 0), 0))
     }).catch(() => {})
-    if (isCreator) tasksApi.getMyPosted().then(res => {
+    if (isCreator) tasksApi.getMyPostedAll().then(raw => {
       if (!active) return
-      const raw = res.data?.data?.tasks || res.data?.data?.Tasks || []
       const normalized = raw.map((t: any) => String(t.taskStatus || '').toLowerCase())
       setAwaitConfirmationCount(normalized.filter((status: string) => status === 'completed').length)
       setPaymentRequiredCount(normalized.filter((status: string) => status === 'pendingpayment').length)
     }).catch(() => {})
     if (isRunner) tasksApi.getMyCompleted().then(res => {
       if (!active) return
-      const raw = Array.isArray(res.data?.data) ? res.data.data : []
-      setCompletedCount(raw.length)
+      const data = res.data?.data
+      setCompletedCount(Number(data?.count ?? (Array.isArray(data) ? data.length : 0)))
     }).catch(() => {})
     return () => { active = false }
   }, [isCreator, isRunner])

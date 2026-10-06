@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { tasksApi, ratingsApi } from '../../api'
 import { usePostErrand } from '../../hooks/usePostErrand'
 import type { Task } from '../../types'
+import Pagination from '../../components/Pagination'
 import './MyPostedTasks.css'
 
 type Section = 'pendingPayment' | 'posted' | 'claimed' | 'completed' | 'runnerPaid'
@@ -33,13 +34,18 @@ function isSafePaymentUrl(url: string) {
   } catch { return false }
 }
 
+const PAGE_SIZE = 10
+
 export default function MyPostedTasks() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { handlePostErrand, ProfileIncompleteModal } = usePostErrand()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalTasks, setTotalTasks] = useState(0)
   const [expanded, setExpanded] = useState<Record<Section, boolean>>({ pendingPayment: true, posted: true, claimed: true, completed: true, runnerPaid: false })
   const [confirmModal, setConfirmModal] = useState<Task | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
@@ -56,16 +62,28 @@ export default function MyPostedTasks() {
   const [detailsModal, setDetailsModal] = useState<Task | null>(null)
   const [, setClock] = useState(0)
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async (targetPage = page, targetTaskId?: string) => {
+    setLoading(true)
+    setError('')
     try {
-      const res = await tasksApi.getMyPosted()
+      const res = await tasksApi.getMyPosted(targetPage, PAGE_SIZE, targetTaskId)
       const inner = res.data?.data
       const raw: Task[] = inner?.tasks || inner?.Tasks || []
       setTasks(raw.map(t => ({ ...t, taskDescription: DOMPurify.sanitize(t.taskDescription || '', { ALLOWED_TAGS: [] }), area: DOMPurify.sanitize(t.area || '', { ALLOWED_TAGS: [] }), helperName: DOMPurify.sanitize(t.helperName || '', { ALLOWED_TAGS: [] }), helperContact: DOMPurify.sanitize(t.helperContact || '', { ALLOWED_TAGS: [] }), category: DOMPurify.sanitize(t.category || '', { ALLOWED_TAGS: [] }) })))
-    } catch { setError('Failed to load tasks.') } finally { setLoading(false) }
-  }
+      setTotalTasks(Number(inner?.count ?? raw.length))
+      setTotalPages(Math.max(1, Number(inner?.totalPages ?? 1)))
+      if (inner?.page) setPage(Number(inner.page))
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load tasks. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }, [page])
 
-  useEffect(() => { loadTasks() }, [])
+  const linkedTaskId = searchParams.get('taskId')
+  useEffect(() => {
+    void loadTasks(page, page === 1 ? linkedTaskId ?? undefined : undefined)
+  }, [linkedTaskId, loadTasks, page])
 
   useEffect(() => {
     const timer = window.setInterval(() => setClock(v => v + 1), 60000)
@@ -82,7 +100,11 @@ export default function MyPostedTasks() {
     setExpanded(e => ({ ...e, [section]: true }))
     requestAnimationFrame(() => document.getElementById(`posted-task-${target}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
     if (searchParams.get('action') === 'confirm' && status === 'awaitingconfirmation') setConfirmModal(task)
-  }, [searchParams, loading, tasks])
+    setSearchParams(params => {
+      params.delete('taskId')
+      return params
+    }, { replace: true })
+  }, [searchParams, loading, tasks, setSearchParams])
 
   const grouped = {
     pendingPayment: tasks.filter(t => normStatus(t.taskStatus) === 'pendingpayment'),
@@ -100,7 +122,7 @@ export default function MyPostedTasks() {
     try {
       const res = await tasksApi.confirm(confirmModal.taskId)
       if (res.data?.success === false) { setActionError(res.data?.message || 'Failed to confirm task'); return }
-      setConfirmModal(null); await loadTasks()
+      setConfirmModal(null); await loadTasks(page)
     } catch (err: any) { setActionError(err.response?.data?.message || 'Failed to confirm task') } finally { setActionLoading(false) }
   }
 
@@ -119,7 +141,7 @@ export default function MyPostedTasks() {
     setCancelLoading(true)
     try {
       const res = await tasksApi.cancel(cancelModal.taskId, 'Cancelled by creator')
-      setCancelMessage(DOMPurify.sanitize(res.data?.message || 'Task cancelled.', { ALLOWED_TAGS: [] })); await loadTasks()
+      setCancelMessage(DOMPurify.sanitize(res.data?.message || 'Task cancelled.', { ALLOWED_TAGS: [] })); await loadTasks(page)
     } catch { setCancelMessage('Failed to cancel task.') } finally { setCancelLoading(false) }
   }
 
@@ -135,8 +157,6 @@ export default function MyPostedTasks() {
     }
   }
 
-  if (loading) return <div className="loading-state"><div className="spinner" /><p>Loading your posted tasks...</p></div>
-
   const sections: { key: Section; icon: string; label: string }[] = [
     { key: 'pendingPayment', icon: 'fa-exclamation-circle', label: 'Pending Payment' },
     { key: 'posted', icon: 'fa-bullhorn', label: 'Live on Browse Errands' },
@@ -150,8 +170,8 @@ export default function MyPostedTasks() {
       <div className="my-posted-page">
         <div className="page-header"><div className="container"><h1><i className="fas fa-list-check" /> My Posted Tasks</h1><p>Manage and track your posted tasks</p></div></div>
         <div className="container">
-          {error && <div className="alert alert-error mb-4"><i className="fas fa-exclamation-circle" /> {error}</div>}
-          {tasks.length === 0 ? <><div className="empty-state"><i className="fas fa-clipboard-list" /><h3>No Posted Tasks</h3><p>You haven't posted any tasks yet.</p><button className="btn btn-primary" onClick={handlePostErrand}>Post Your First Task</button></div>{ProfileIncompleteModal}</> : sections.map(({ key, icon, label }) => grouped[key].length > 0 && (
+          {error && <div className="alert alert-error mb-4" role="alert"><i className="fas fa-exclamation-circle" /> {error} <button className="btn btn-secondary btn-sm" onClick={() => void loadTasks(page)}>Retry</button></div>}
+          {loading ? <div className="loading-state"><div className="spinner" /><p>Loading your posted tasks...</p></div> : tasks.length === 0 ? <><div className="empty-state"><i className="fas fa-clipboard-list" /><h3>No Posted Tasks</h3><p>You haven't posted any tasks yet.</p><button className="btn btn-primary" onClick={handlePostErrand}>Post Your First Task</button></div>{ProfileIncompleteModal}</> : sections.map(({ key, icon, label }) => grouped[key].length > 0 && (
             <div key={key} className="status-section">
               <button className="status-heading" onClick={() => toggle(key)}><span><i className={`fas ${icon}`} /> {label} ({grouped[key].length})</span><i className={`fas fa-chevron-${expanded[key] ? 'up' : 'down'}`} /></button>
               {expanded[key] && <div className="tasks-grid">{grouped[key].map(task => (
@@ -173,6 +193,14 @@ export default function MyPostedTasks() {
               ))}</div>}
             </div>
           ))}
+          {!loading && <Pagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            totalCount={totalTasks}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            label="posted tasks"
+          />}
         </div>
 
         {confirmModal && <div className="modal-overlay" onClick={() => setConfirmModal(null)}><div className="modal-box" onClick={e => e.stopPropagation()}><div className="modal-header"><h3><i className="fas fa-check-circle" /> Confirm Task Completion</h3><button className="btn-close" onClick={() => setConfirmModal(null)}><i className="fas fa-times" /></button></div><div className="modal-body"><p>Are you satisfied with the completion of:</p><p className="mt-2"><strong>{confirmModal.taskDescription}</strong></p><div className="alert alert-info mt-3"><i className="fas fa-info-circle" /> You are confirming that the runner completed the task. This releases the runner's payout through Paystack. If there is a problem, close this dialog and raise a dispute instead. If you take no action for 24 hours, DFY automatically confirms the task.</div></div>{actionError && <p style={{ color: 'var(--danger)', fontSize: '0.85rem', padding: '0 1.5rem 0.5rem' }}>{actionError}</p>}<div className="modal-footer"><button className="btn btn-secondary" onClick={() => { setConfirmModal(null); setActionError('') }}>Cancel</button><button className="btn btn-primary" onClick={handleConfirm} disabled={actionLoading}>{actionLoading ? <><span className="spinner spinner-sm" /> Processing...</> : 'Confirm & Release Payout'}</button></div></div></div>}
