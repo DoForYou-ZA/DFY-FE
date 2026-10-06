@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { tasksApi, ratingsApi, disputesApi } from '../../api'
 
 export default function MyCompletedTasks() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [tasks, setTasks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalTasks, setTotalTasks] = useState(0)
   const [ratingModal, setRatingModal] = useState<any | null>(null)
   const [ratingValue, setRatingValue] = useState(5)
   const [ratingReview, setRatingReview] = useState('')
@@ -19,18 +23,43 @@ export default function MyCompletedTasks() {
   const [disputeLoading, setDisputeLoading] = useState(false)
   const [disputeError, setDisputeError] = useState('')
 
-  useEffect(() => {
-    tasksApi.getMyCompleted()
-      .then(r => setTasks(r.data?.data || []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+  const loadTasks = useCallback(async (targetPage: number, targetTaskId?: string) => {
+    setLoading(true)
+    setLoadError('')
+    try {
+      const response = await tasksApi.getMyCompleted(targetPage, 10, targetTaskId)
+      const result = response.data?.data
+      const nextTotalPages = Math.max(1, Number(result?.totalPages ?? 1))
+      setTasks(Array.isArray(result?.tasks) ? result.tasks : Array.isArray(result) ? result : [])
+      setTotalTasks(Number(result?.count ?? 0))
+      setTotalPages(nextTotalPages)
+      if (targetPage > nextTotalPages)
+        setPage(nextTotalPages)
+      if (targetTaskId && result?.page)
+        setPage(Number(result.page))
+    } catch (err: any) {
+      setLoadError(err.response?.data?.message || 'Unable to load completed tasks. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  const linkedTaskId = searchParams.get('taskId')
+  useEffect(() => {
+    void loadTasks(page, page === 1 ? linkedTaskId ?? undefined : undefined)
+  }, [loadTasks, linkedTaskId, page])
 
   useEffect(() => {
     const target = searchParams.get('taskId')
     if (!target || loading) return
-    requestAnimationFrame(() => document.getElementById(`completed-task-${target}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
-  }, [searchParams, loading])
+    const taskElement = document.getElementById(`completed-task-${target}`)
+    if (!taskElement) return
+    requestAnimationFrame(() => taskElement.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+    setSearchParams(params => {
+      params.delete('taskId')
+      return params
+    }, { replace: true })
+  }, [searchParams, loading, setSearchParams])
 
   const handleDispute = async () => {
     if (!disputeModal || !disputeIssue.trim()) return
@@ -45,7 +74,7 @@ export default function MyCompletedTasks() {
       setDisputeModal(null)
       setDisputeIssue('')
       setDisputeCategory('General')
-      await tasksApi.getMyCompleted().then(r => setTasks(r.data?.data || []))
+      await loadTasks(page)
     } catch (err: any) {
       setDisputeError(err.response?.data?.message || 'Failed to raise dispute')
     } finally {
@@ -71,15 +100,17 @@ export default function MyCompletedTasks() {
   const lifecycle = (t: any) => {
     const s = String(t.status || '').toLowerCase()
     const payout = String(t.payoutStatus || '').toLowerCase()
-    if (payout === 'failed' || payout === 'returned' || payout === 'cancelled') return { label: 'Payout Issue', tone: 'badge-cancelled', detail: payout === 'failed' ? 'The payout failed. Check your verified bank details and wait for retry or contact support.' : payout === 'returned' ? 'The payout was returned. Check your verified bank details and contact support if needed.' : 'The payout was cancelled. Check the task/payment status or contact support.' }
+    if (payout === 'failed' || payout === 'returned' || payout === 'cancelled') return { label: 'Payout Issue', tone: 'badge-cancelled', detail: payout === 'failed' ? 'Verify or re-verify your bank account in Payout Settings. If the payout remains failed, contact support.' : payout === 'returned' ? 'The payout was returned. Check your verified bank details and contact support if needed.' : 'The payout was cancelled. Check the task/payment status or contact support.' }
     if (s === 'runnerpaid' || payout === 'completed' || payout === 'paid') return { label: 'Paid', tone: 'badge-runner_paid', detail: t.payoutCompletedAt ? `Paid ${new Date(t.payoutCompletedAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}` : 'Payout completed' }
+    if (payout === 'awaitingbankdetails') return { label: 'Bank verification required', tone: 'badge-draft', detail: 'Verify your bank account in Payout Settings to resume this payout.' }
     if (payout === 'awaitingfunds') return { label: 'Payout Awaiting Funds', tone: 'badge-draft', detail: 'Your payout has been approved and is waiting for available Paystack funds. DFY will retry automatically.' }
     if (s === 'payoutpending' || payout === 'processing' || payout === 'pending' || payout === 'initiated') return { label: 'Payout Processing', tone: 'badge-draft', detail: 'Creator confirmed. Your payout is being processed.' }
     if (s === 'awaitingconfirmation' || s === 'completed') return { label: 'Awaiting Creator', tone: 'badge-completed', detail: 'You completed the task. The creator has 24 hours to confirm or dispute. Silence automatically confirms the task and starts payout.' }
     return { label: t.status || 'Completed', tone: 'badge-completed', detail: 'Task completed.' }
   }
-
-  if (loading) return <div className="loading-state"><div className="spinner" /><p>Loading completed tasks...</p></div>
+  const paginationPages = [...new Set([1, page - 1, page, page + 1, totalPages])]
+    .filter(pageNumber => pageNumber >= 1 && pageNumber <= totalPages)
+    .sort((a, b) => a - b)
 
   return (
     <div className="my-completed-page" style={{ paddingBottom: '3rem' }}>
@@ -90,7 +121,11 @@ export default function MyCompletedTasks() {
         </div>
       </div>
       <div className="container">
-        {tasks.length === 0 ? (
+        {loadError && <div className="alert alert-error mb-4" role="alert"><i className="fas fa-exclamation-circle" /> {loadError} <button className="btn btn-secondary btn-sm" onClick={() => void loadTasks(page)}>Retry</button></div>}
+        {totalTasks > 0 && <div className="completed-tasks-summary"><span>{totalTasks} completed task{totalTasks === 1 ? '' : 's'}</span><span>Page {page} of {totalPages}</span></div>}
+        {loading ? (
+          <div className="loading-state"><div className="spinner" /><p>Loading completed tasks...</p></div>
+        ) : tasks.length === 0 && loadError ? null : tasks.length === 0 ? (
           <div className="empty-state">
             <i className="fas fa-trophy" />
             <h3>No Completed Tasks</h3>
@@ -141,6 +176,29 @@ export default function MyCompletedTasks() {
               </div>
             ))}
           </div>
+        )}
+        {!loading && totalPages > 1 && (
+          <nav className="pagination completed-tasks-pagination" aria-label="Completed tasks pages">
+            <button className="page-btn" disabled={page <= 1} onClick={() => setPage(current => current - 1)} aria-label="Previous page">
+              <i className="fas fa-chevron-left" />
+            </button>
+            {paginationPages.map((pageNumber, index) => (
+              <span className="completed-page-slot" key={pageNumber}>
+                {index > 0 && pageNumber - paginationPages[index - 1] > 1 && <span className="completed-page-ellipsis" aria-hidden="true">…</span>}
+                <button
+                  className={`page-btn ${pageNumber === page ? 'active' : ''}`}
+                  onClick={() => setPage(pageNumber)}
+                  aria-current={pageNumber === page ? 'page' : undefined}
+                  aria-label={`Page ${pageNumber}`}
+                >
+                  {pageNumber}
+                </button>
+              </span>
+            ))}
+            <button className="page-btn" disabled={page >= totalPages} onClick={() => setPage(current => current + 1)} aria-label="Next page">
+              <i className="fas fa-chevron-right" />
+            </button>
+          </nav>
         )}
       </div>
 

@@ -26,7 +26,7 @@ export const tasksApi = {
   },
   getMyPosted: () => api.get('/tasks/my-posted'),
   getMyActive: () => api.get('/tasks/my-active'),
-  getMyCompleted: () => api.get('/tasks/my-completed'),
+  getMyCompleted: (page = 1, pageSize = 10, taskId?: string) => api.get('/tasks/my-completed', { params: { page, pageSize, taskId } }),
   getById: (id: string) => api.get(`/tasks/${id}`),
   create: (data: object) => api.post('/tasks', data),
   update: (id: string, data: object) => api.put(`/tasks/${id}`, data),

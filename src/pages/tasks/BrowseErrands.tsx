@@ -24,6 +24,7 @@ export default function BrowseErrands() {
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [claimLoading, setClaimLoading] = useState(false)
   const [claimError, setClaimError] = useState('')
+  const [needsPayoutAccount, setNeedsPayoutAccount] = useState(false)
 
   const load = useCallback(async (p = 1, s = search, cat = category) => {
     setLoading(true)
@@ -89,6 +90,7 @@ export default function BrowseErrands() {
     if (!canAcceptTasks()) return
     setTermsAccepted(false)
     setClaimError('')
+    setNeedsPayoutAccount(false)
     setClaimModal(task)
   }
 
@@ -96,11 +98,13 @@ export default function BrowseErrands() {
     if (!claimModal || !termsAccepted) return
     setClaimLoading(true)
     setClaimError('')
+    setNeedsPayoutAccount(false)
     try {
       const name = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.name || ''
       const contact = user?.phoneNumber || user?.contact || ''
       const res = await tasksApi.claim(claimModal.taskId, name, contact, true)
       if (res.data?.success !== true || res.data?.data !== true) {
+        setNeedsPayoutAccount(res.data?.error === 'PAYOUT_BANK_ACCOUNT_REQUIRED')
         setClaimError(res.data?.message || 'This task could not be accepted.')
         await load(page, search, category)
         return
@@ -110,8 +114,11 @@ export default function BrowseErrands() {
       setTasks(prev => prev.filter(t => t.taskId !== acceptedId))
       navigate('/tasks/my-active')
     } catch (err: any) {
+      const missingPayoutAccount = err.response?.data?.error === 'PAYOUT_BANK_ACCOUNT_REQUIRED'
+      setNeedsPayoutAccount(missingPayoutAccount)
       setClaimError(err.response?.data?.message || 'This task is no longer available. Please refresh and try again.')
-      setTasks(prev => prev.filter(t => t.taskId !== claimModal.taskId))
+      if (!missingPayoutAccount)
+        setTasks(prev => prev.filter(t => t.taskId !== claimModal.taskId))
     } finally {
       setClaimLoading(false)
     }
@@ -199,7 +206,8 @@ export default function BrowseErrands() {
           <div className="modal-header"><h3><i className="fas fa-handshake" /> Accept Task</h3><button className="btn-close" disabled={claimLoading} onClick={() => setClaimModal(null)}><i className="fas fa-times" /></button></div>
           <div className="modal-body">
             <p>You're accepting:</p><div className="claim-task-info"><strong>{title(claimModal)}</strong><p>{description(claimModal)}</p><p><i className="fas fa-map-marker-alt" /> {location(claimModal)}</p><p><i className="fas fa-calendar-alt" /> {date(claimModal)}</p><p><i className="fas fa-money-bill-wave" /> You earn: <strong>R{payout(claimModal).toFixed(0)}</strong></p></div>
-            <div className="alert alert-info"><strong>Before you accept</strong><ul style={{ margin: '.5rem 0 0 1rem' }}><li>Complete the task as described and within the agreed timing.</li><li>Keep task communication on DFY where practical.</li><li>Only mark the task complete when the work is actually finished.</li><li>Payment is released after the creator confirms completion.</li><li>Payout is sent directly to your verified bank account; DFY does not use a runner wallet.</li></ul></div>
+            <div className="alert alert-info"><strong>Before you accept</strong><ul style={{ margin: '.5rem 0 0 1rem' }}><li>A verified Paystack bank account is required before accepting.</li><li>Complete the task as described and within the agreed timing.</li><li>Keep task communication on DFY where practical.</li><li>Only mark the task complete when the work is actually finished.</li><li>Payment is released after the creator confirms completion.</li><li>Payout is sent directly to your verified bank account; DFY does not use a runner wallet.</li></ul></div>
+            {needsPayoutAccount && <div className="alert alert-warning mt-3">Add and verify your payout destination first: <Link to="/user/bank-accounts" onClick={() => setClaimModal(null)}>Payout Settings</Link>.</div>}
             <label style={{ display:'flex', gap:'.6rem', alignItems:'flex-start', cursor:'pointer' }}><input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} /><span>I agree to the runner terms for this task.</span></label>
             {claimError && <div className="alert alert-error mt-3"><i className="fas fa-exclamation-circle" /> {claimError}</div>}
           </div>
