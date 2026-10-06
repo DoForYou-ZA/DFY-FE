@@ -4,6 +4,14 @@ import { tasksApi, ratingsApi, disputesApi } from '../../api'
 import Pagination from '../../components/Pagination'
 
 const PAGE_SIZE = 10
+type CompletedSection = 'all' | 'awaitingCreator' | 'payoutIssue' | 'processing' | 'paid'
+const COMPLETED_SECTIONS: { key: CompletedSection; label: string }[] = [
+  { key: 'all', label: 'All Tasks' },
+  { key: 'awaitingCreator', label: 'Awaiting Creator' },
+  { key: 'payoutIssue', label: 'Payout Issue' },
+  { key: 'processing', label: 'Payout Processing' },
+  { key: 'paid', label: 'Paid' },
+]
 
 export default function MyCompletedTasks() {
   const navigate = useNavigate()
@@ -14,6 +22,10 @@ export default function MyCompletedTasks() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalTasks, setTotalTasks] = useState(0)
+  const [activeSection, setActiveSection] = useState<CompletedSection>('all')
+  const [statusCounts, setStatusCounts] = useState<Record<CompletedSection, number>>({
+    all: 0, awaitingCreator: 0, payoutIssue: 0, processing: 0, paid: 0,
+  })
   const [ratingModal, setRatingModal] = useState<any | null>(null)
   const [ratingValue, setRatingValue] = useState(5)
   const [ratingReview, setRatingReview] = useState('')
@@ -30,12 +42,21 @@ export default function MyCompletedTasks() {
     setLoading(true)
     setLoadError('')
     try {
-      const response = await tasksApi.getMyCompleted(targetPage, PAGE_SIZE, targetTaskId)
+      const response = await tasksApi.getMyCompleted(targetPage, PAGE_SIZE, targetTaskId, activeSection)
       const result = response.data?.data
       const nextTotalPages = Math.max(1, Number(result?.totalPages ?? 1))
       setTasks(Array.isArray(result?.tasks) ? result.tasks : Array.isArray(result) ? result : [])
       setTotalTasks(Number(result?.count ?? 0))
       setTotalPages(nextTotalPages)
+      if (result?.statusCounts) {
+        setStatusCounts({
+          all: Number(result.statusCounts.all ?? 0),
+          awaitingCreator: Number(result.statusCounts.awaitingCreator ?? 0),
+          payoutIssue: Number(result.statusCounts.payoutIssue ?? 0),
+          processing: Number(result.statusCounts.processing ?? 0),
+          paid: Number(result.statusCounts.paid ?? 0),
+        })
+      }
       if (targetPage > nextTotalPages)
         setPage(nextTotalPages)
       if (targetTaskId && result?.page)
@@ -45,11 +66,11 @@ export default function MyCompletedTasks() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeSection])
 
   const linkedTaskId = searchParams.get('taskId')
   useEffect(() => {
-    void loadTasks(page, page === 1 ? linkedTaskId ?? undefined : undefined)
+    void loadTasks(page, linkedTaskId ?? undefined)
   }, [loadTasks, linkedTaskId, page])
 
   useEffect(() => {
@@ -121,17 +142,40 @@ export default function MyCompletedTasks() {
       </div>
       <div className="container">
         {loadError && <div className="alert alert-error mb-4" role="alert"><i className="fas fa-exclamation-circle" /> {loadError} <button className="btn btn-secondary btn-sm" onClick={() => void loadTasks(page)}>Retry</button></div>}
+        {statusCounts.all > 0 && <div className="completed-task-tabs" role="tablist" aria-label="Completed task status">
+          {COMPLETED_SECTIONS.map(({ key, label }) => (
+            <button
+              key={key}
+              id={`completed-tab-${key}`}
+              className={`completed-task-tab ${activeSection === key ? 'active' : ''}`}
+              role="tab"
+              aria-selected={activeSection === key}
+              aria-controls="completed-task-panel"
+              onClick={() => { setActiveSection(key); setPage(1) }}
+            >
+              <span>{label}</span>
+              <span className="completed-task-tab-count">{statusCounts[key]}</span>
+            </button>
+          ))}
+        </div>}
         {loading ? (
           <div className="loading-state"><div className="spinner" /><p>Loading completed tasks...</p></div>
-        ) : tasks.length === 0 && loadError ? null : tasks.length === 0 ? (
+        ) : tasks.length === 0 && loadError ? null : tasks.length === 0 && activeSection === 'all' ? (
           <div className="empty-state">
             <i className="fas fa-trophy" />
             <h3>No Completed Tasks</h3>
             <p>Tasks you complete will appear here.</p>
             <button className="btn btn-primary" onClick={() => navigate('/tasks/browse')}>Browse Tasks</button>
           </div>
+        ) : tasks.length === 0 ? (
+          <div className="empty-state">
+            <i className="fas fa-filter" />
+            <h3>No {COMPLETED_SECTIONS.find(section => section.key === activeSection)?.label} Tasks</h3>
+            <p>There are no tasks in this status right now.</p>
+            <button className="btn btn-outline" onClick={() => { setActiveSection('all'); setPage(1) }}>View All Tasks</button>
+          </div>
         ) : (
-          <div className="tasks-grid">
+          <div id="completed-task-panel" className="tasks-grid" role="tabpanel" aria-labelledby={`completed-tab-${activeSection}`}>
             {tasks.map((t: any) => (
               <div id={`completed-task-${t.taskId}`} key={t.taskId} className="task-card">
                 <div className="task-card-header">

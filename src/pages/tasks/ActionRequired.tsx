@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import DOMPurify from 'dompurify'
 import { tasksApi } from '../../api'
 import type { Task } from '../../types'
+import Pagination from '../../components/Pagination'
+
+const PAGE_SIZE = 10
 
 function normStatus(value?: string) {
   return (value || '').toLowerCase().replace(/[_ -]/g, '')
@@ -18,12 +21,19 @@ export default function ActionRequired() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalTasks, setTotalTasks] = useState(0)
+  const filter = searchParams.get('filter') || 'all'
 
-  const load = async () => {
+  const load = useCallback(async (targetPage: number, taskId?: string) => {
     setLoading(true)
     setError('')
     try {
-      const raw = await tasksApi.getMyPostedAll()
+      const status = filter === 'confirmation' ? 'completed' : filter === 'payments' ? 'pendingPayment' : 'actionRequired'
+      const res = await tasksApi.getMyPosted(targetPage, PAGE_SIZE, taskId, status)
+      const result = res.data?.data
+      const raw: Task[] = result?.tasks || result?.Tasks || []
       setTasks(raw.map(t => ({
         ...t,
         taskName: DOMPurify.sanitize(t.taskName || '', { ALLOWED_TAGS: [] }),
@@ -32,36 +42,33 @@ export default function ActionRequired() {
         helperName: DOMPurify.sanitize(t.helperName || '', { ALLOWED_TAGS: [] }),
         helperContact: DOMPurify.sanitize(t.helperContact || '', { ALLOWED_TAGS: [] }),
       })))
-    } catch {
-      setError('Failed to load tasks requiring your attention.')
+      setTotalTasks(Number(result?.count ?? raw.length))
+      setTotalPages(Math.max(1, Number(result?.totalPages ?? 1)))
+      if (result?.page) setPage(Number(result.page))
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load tasks requiring your attention.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [filter])
 
-  useEffect(() => { load() }, [])
-
-  const filter = searchParams.get('filter') || 'all'
-
-  const actionTasks = useMemo(() => tasks.filter(t => {
-    const s = normStatus(t.taskStatus)
-    if (filter === 'confirmation') return s === 'awaitingconfirmation'
-    if (filter === 'payments') return s === 'pendingpayment'
-    return s === 'awaitingconfirmation' || s === 'pendingpayment'
-  }), [tasks, filter])
+  const linkedTaskId = searchParams.get('taskId')
+  useEffect(() => {
+    void load(page, page === 1 ? linkedTaskId ?? undefined : undefined)
+  }, [filter, linkedTaskId, load, page])
 
   useEffect(() => {
     const target = searchParams.get('taskId')
     if (!target || loading) return
-    const exists = actionTasks.some(t => String(t.taskId) === target)
+    const exists = tasks.some(t => String(t.taskId) === target)
     if (!exists) return
     requestAnimationFrame(() => document.getElementById(`action-task-${target}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
-  }, [searchParams, loading, actionTasks])
+  }, [searchParams, loading, tasks])
 
   if (loading) return <div className="loading-state"><div className="spinner" /><p>Checking tasks that need your attention...</p></div>
 
   return (
-    <div style={{ paddingBottom: '3rem' }}>
+    <div className="action-required-page">
       <div className="page-header">
         <div className="container">
           <h1><i className={`fas ${filter === 'payments' ? 'fa-credit-card' : 'fa-triangle-exclamation'}`} /> {filter === 'confirmation' ? 'Await Confirmation' : filter === 'payments' ? 'Payments' : 'Action Required'}</h1>
@@ -69,8 +76,8 @@ export default function ActionRequired() {
         </div>
       </div>
       <div className="container">
-        {error && <div className="alert alert-error mb-4"><i className="fas fa-exclamation-circle" /> {error}</div>}
-        {actionTasks.length === 0 ? (
+        {error && <div className="alert alert-error mb-4" role="alert"><i className="fas fa-exclamation-circle" /> {error} <button className="btn btn-secondary btn-sm" onClick={() => void load(page)}>Retry</button></div>}
+        {tasks.length === 0 ? (
           <div className="empty-state">
             <i className="fas fa-circle-check" />
             <h3>You're all caught up</h3>
@@ -78,12 +85,12 @@ export default function ActionRequired() {
             <button className="btn btn-primary" onClick={() => navigate('/tasks/my-posted')}>View My Posted Tasks</button>
           </div>
         ) : (
-          <div className="tasks-grid">
-            {actionTasks.map(task => {
+          <div className="tasks-grid action-required-grid">
+            {tasks.map(task => {
               const awaitingConfirmation = normStatus(task.taskStatus) === 'awaitingconfirmation'
               const pendingPayment = normStatus(task.taskStatus) === 'pendingpayment' || normStatus(task.paymentStatus) === 'pending'
               return (
-                <div id={`action-task-${task.taskId}`} key={task.taskId} className="task-card" style={{ border: '1px solid var(--border)' }}>
+                <div id={`action-task-${task.taskId}`} key={task.taskId} className="task-card action-required-card" style={{ border: '1px solid var(--border)' }}>
                   <div className="task-card-header">
                     <span className={`badge ${awaitingConfirmation ? 'badge-completed' : 'badge-draft'}`}>
                       {awaitingConfirmation ? 'Awaiting Your Confirmation' : 'Payment Required'}
@@ -117,6 +124,14 @@ export default function ActionRequired() {
             })}
           </div>
         )}
+        {!loading && <Pagination
+          page={page}
+          pageSize={PAGE_SIZE}
+          totalCount={totalTasks}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          label="tasks"
+        />}
       </div>
     </div>
   )
