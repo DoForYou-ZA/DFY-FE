@@ -95,15 +95,10 @@ async function createTask(api: APIRequestContext, creatorToken: string, suffix: 
       termsAccepted: true,
     },
   })
-  expect([200, 201, 502]).toContain(create.status())
-
-  const posted = await api.get(`${API_BASE_URL}/tasks/my-posted`, {
-    headers: { Authorization: 'Bearer ' + creatorToken },
-  })
-  expect(posted.ok()).toBeTruthy()
-  const body = await posted.json()
-  const tasks = body.data?.tasks || body.data?.Tasks || []
-  const task = tasks.find((t: any) => t.taskName === taskName)
+  expect(create.ok(), `Task creation failed: HTTP ${create.status()} body=${await create.text()}`).toBeTruthy()
+  const body = await create.json()
+  expect(body.success).toBeTruthy()
+  const task = body.data?.task
   expect(task).toBeTruthy()
   return { taskId: String(task.taskId), taskName, taskDescription }
 }
@@ -253,7 +248,13 @@ test.describe('full DFY Paystack lifecycle', () => {
       await disputeCard.getByRole('button', { name: /Raise Dispute/i }).click()
       await expect(runnerPage.getByRole('heading', { name: /Raise Dispute/i })).toBeVisible()
       await runnerPage.locator('.form-textarea').fill('The delivered work does not match the task requirements; please review before releasing escrow.')
+      const disputeResponse = runnerPage.waitForResponse((res) =>
+        res.url().includes('/api/v1/disputes') && res.request().method() === 'POST',
+        { timeout: 30_000 }
+      )
       await runnerPage.locator('.modal-footer').getByRole('button', { name: /Submit Dispute/i }).click()
+      const disputeHttp = await disputeResponse
+      expect(disputeHttp.ok(), `Dispute submission failed: HTTP ${disputeHttp.status()} body=${await disputeHttp.text()}`).toBeTruthy()
     } finally {
       await runnerPage.close()
     }
