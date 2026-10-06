@@ -101,7 +101,7 @@ async function createTask(api: APIRequestContext, creatorToken: string, suffix: 
   expect(body.success).toBeTruthy()
   const task = body.data?.task
   expect(task).toBeTruthy()
-  return { taskId: String(task.taskId), taskName, taskDescription }
+  return { taskId: String(task.taskId), taskName, taskDescription, paymentUrl: String(body.data?.paymentUrl || '') }
 }
 
 async function adminVerify(api: APIRequestContext, adminToken: string, taskId: string) {
@@ -169,21 +169,45 @@ test.describe('full DFY Paystack lifecycle', () => {
 
     const created = await createTask(request, creatorToken, 'CONFIRM-' + Date.now())
 
-    // Real Paystack transaction initialization occurs in the staging backend.
-    const paymentUrl = await request.get(`${API_BASE_URL}/tasks/${encodeURIComponent(created.taskId)}/payment-url`, {
-      headers: { Authorization: 'Bearer ' + creatorToken },
-    })
-    expect(paymentUrl.ok(), `Paystack payment initialization failed: HTTP ${paymentUrl.status()} body=${await paymentUrl.text()}`).toBeTruthy()
-    const paymentBody = await paymentUrl.json()
-    const checkoutUrl = paymentBody.data?.paymentUrl
+    // Use the Paystack checkout returned by the actual task-creation payment attempt.
+    // Then complete the hosted checkout with Paystack's reusable successful test card.
+    const checkoutUrl = created.paymentUrl
     expect(checkoutUrl).toMatch(/^https:\/\/(checkout\.)?paystack\.com\//i)
 
-    const callback = await request.get(
-      `${API_BASE_URL.replace('/api/v1', '')}/api/v1/payment/return?taskId=${encodeURIComponent(created.taskId)}`,
-      { maxRedirects: 0 }
-    )
-    expect(callback.status()).toBe(302)
-    expect(callback.headers()['location']).toContain(`/payment/success?taskId=${encodeURIComponent(created.taskId)}`)
+    await page.goto(checkoutUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 })
+
+    const cardNumber = page.locator('input[autocomplete="cc-number"], input[name*="card"][name*="number" i], input[placeholder*="card number" i]').first()
+    const expiry = page.locator('input[autocomplete="cc-exp"], input[name*="expir" i], input[placeholder*="MM" i]').first()
+    const cvv = page.locator('input[autocomplete="cc-csc"], input[name*="cvv" i], input[name*="cvc" i], input[placeholder*="CVV" i]').first()
+
+    await expect(cardNumber).toBeVisible({ timeout: 30_000 })
+    await cardNumber.fill('4084 0840 8408 4081')
+    await expiry.fill('09/27')
+    await cvv.fill('408')
+
+    const payButton = page.getByRole('button', { name: /pay/i }).last()
+    await expect(payButton).toBeVisible({ timeout: 15_000 })
+
+    const callbackPromise = page.waitForURL(/\/payment\/success\?taskId=/, { timeout: 60_000 })
+    await payButton.click()
+    await callbackPromise
+
+    expect(page.url()).toContain(`/payment/success?taskId=${encodeURIComponent(created.taskId)}`)
+
+    // The callback is not the source of truth; wait for Paystack's charge.success webhook
+    // to move the task into DFY's real Posted/EscrowHeld state.
+    await expect.poll(async () => {
+      const t = await getTask(request, creatorToken, created.taskId)
+      return {
+        status: String(t.status || '').toLowerCase(),
+        payment: String(t.paymentStatus || '').toLowerCase(),
+        escrow: String(t.escrowStatus || '').toLowerCase(),
+      }
+    }, { timeout: 60_000, intervals: [1000, 2000, 3000] }).toMatchObject({
+      status: 'posted',
+      payment: 'escrowheld',
+      escrow: 'held',
+    })
 
     await adminVerify(request, adminToken, created.taskId)
 
