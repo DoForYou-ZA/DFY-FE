@@ -24,9 +24,10 @@ async function fillRegistration(page: Page, password: string) {
   await page.getByPlaceholder('Phone Number *').fill(PHONE)
   await page.getByRole('button', { name: /continue/i }).click()
 
+  const creatorRoleCard = page.locator('label.role-card').filter({ hasText: 'Task Creator' }).first()
+  await expect(creatorRoleCard).toBeVisible()
+  await creatorRoleCard.click()
   const creatorRole = page.locator('input[name="userType"][value="creator"]')
-  await expect(creatorRole).toBeVisible()
-  await creatorRole.check()
   await expect(creatorRole).toBeChecked()
   await page.getByPlaceholder('ID Number *').fill(ID_NUMBER!)
   await expect(page.locator('input[type="date"]')).toHaveValue(/^1993-02-22$/)
