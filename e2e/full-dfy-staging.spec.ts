@@ -32,7 +32,7 @@ async function apiLogin(api: APIRequestContext, email: string, password: string)
 
 async function provisionFreshCreator(api: APIRequestContext) {
   const unique = Date.now() + '_' + Math.random().toString(36).slice(2, 8)
-  const email = 'dfy.e2e.creator.' + unique + '@example.com'
+  const email = 'dfy.e2e.creator.' + unique + '@gmail.com'
   const password = requireEnv('DFY_CREATOR_PASSWORD', CREATOR_PASSWORD)
   const phone = '082' + String(Date.now() % 10000000).padStart(7, '0')
   const sequence = String(Date.now() % 10000).padStart(4, '0')
@@ -229,7 +229,8 @@ test.describe('full DFY Paystack lifecycle', () => {
   })
 
   test('runner dispute freezes escrow -> admin resolves dispute -> payout path is re-opened', async ({ browser, page, request }) => {
-    const creatorToken = await apiLogin(request, requireEnv('DFY_CREATOR_EMAIL', CREATOR_EMAIL), requireEnv('DFY_CREATOR_PASSWORD', CREATOR_PASSWORD))
+    const freshCreator = await provisionFreshCreator(request)
+    const creatorToken = await apiLogin(request, freshCreator.email, freshCreator.password)
     const runnerToken = await apiLogin(request, requireEnv('DFY_RUNNER_EMAIL', RUNNER_EMAIL), requireEnv('DFY_RUNNER_PASSWORD', RUNNER_PASSWORD))
     const adminToken = await apiLogin(request, requireEnv('DFY_ADMIN_EMAIL', ADMIN_EMAIL), requireEnv('DFY_ADMIN_PASSWORD', ADMIN_PASSWORD))
     await ensureRunnerBank(request, runnerToken, creatorToken, adminToken)
