@@ -146,8 +146,8 @@ export default function BrowseErrands() {
       </div></div>}
 
       <div className="container">
-        <div className="filters-card section-card"><div className="filters-row">
-          <div className="search-wrapper"><i className="fas fa-search" /><input className="form-input" placeholder="Search tasks..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load(1)} /></div>
+        <div className="filters-card"><div className="filters-row">
+          <div className="search-wrapper"><i className="fas fa-search" /><input className="form-input" type="search" placeholder="Search tasks..." aria-label="Search tasks" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load(1)} /></div>
           <select className="form-select" value={category} onChange={e => { setCategory(e.target.value); setPage(1) }}>
             <option value="">All Categories</option>{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>

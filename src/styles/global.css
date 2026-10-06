@@ -900,6 +900,7 @@ img { max-width: 100%; height: auto; }
 .admin-toolbar .form-select,
 .admin-toolbar .form-input {
   min-width: 0;
+  max-width: 480px;
 }
 .admin-toolbar-spacer { margin-left: auto; }
 .admin-toolbar-actions {
@@ -916,6 +917,7 @@ img { max-width: 100%; height: auto; }
   /* Search + filter take full width on their own row */
   .admin-toolbar .form-select { width: 100% !important; flex: 1 1 140px; }
   .admin-toolbar .form-input  { width: 100% !important; flex: 1 1 160px; }
+  .admin-toolbar .form-input  { max-width: 100%; }
   /* Count label and export buttons shrink to icon-only */
   .admin-toolbar-label { display: none; }
   .admin-toolbar-actions .btn span { display: none; }

@@ -169,6 +169,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, .35fr) auto;
   gap: .75rem;
+  width: 100%;
+  max-width: 680px;
 }
 
 .user-dashboard-content .search-wrapper {
