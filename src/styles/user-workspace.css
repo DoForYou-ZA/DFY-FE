@@ -3986,9 +3986,16 @@
 }
 
 .user-workspace-shell .active-tasks-page .tasks-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   justify-content: stretch;
   gap: .7rem;
+}
+
+.user-workspace-shell .active-tasks-page .active-task-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .user-workspace-shell .active-task-card .task-card-header {
@@ -3997,6 +4004,7 @@
 }
 
 .user-workspace-shell .active-task-card .task-card-body {
+  flex: 1;
   padding: .65rem .75rem;
 }
 

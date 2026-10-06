@@ -7,9 +7,17 @@ import type { Task } from '../../types'
 import Pagination from '../../components/Pagination'
 import './MyPostedTasks.css'
 
-type Section = 'pendingPayment' | 'posted' | 'claimed' | 'completed' | 'runnerPaid'
+type Section = 'all' | 'pendingPayment' | 'posted' | 'claimed' | 'completed' | 'runnerPaid'
 
 function normStatus(status?: string) { return (status || '').toLowerCase().replace(/[_ -]/g, '') }
+function taskSection(task: Task): Exclude<Section, 'all'> {
+  const status = normStatus(task.taskStatus)
+  if (status === 'awaitingconfirmation') return 'completed'
+  if (['claimed', 'inprogress'].includes(status)) return 'claimed'
+  if (status === 'posted') return 'posted'
+  if (['runnerpaid', 'confirmed', 'payoutpending', 'completed'].includes(status)) return 'runnerPaid'
+  return 'pendingPayment'
+}
 function confirmationTimeLeft(deadline?: string) {
   if (!deadline) return null
   const ms = new Date(deadline).getTime() - Date.now()
@@ -35,6 +43,14 @@ function isSafePaymentUrl(url: string) {
 }
 
 const PAGE_SIZE = 10
+const TASK_SECTIONS: { key: Section; icon: string; label: string }[] = [
+  { key: 'all', icon: 'fa-layer-group', label: 'All Tasks' },
+  { key: 'pendingPayment', icon: 'fa-exclamation-circle', label: 'Pending Payment' },
+  { key: 'posted', icon: 'fa-bullhorn', label: 'Live on Browse Errands' },
+  { key: 'claimed', icon: 'fa-spinner', label: 'In Progress' },
+  { key: 'completed', icon: 'fa-clock', label: 'Awaiting Confirmation' },
+  { key: 'runnerPaid', icon: 'fa-check-circle', label: 'Completed' },
+]
 
 export default function MyPostedTasks() {
   const navigate = useNavigate()
@@ -46,7 +62,10 @@ export default function MyPostedTasks() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalTasks, setTotalTasks] = useState(0)
-  const [expanded, setExpanded] = useState<Record<Section, boolean>>({ pendingPayment: true, posted: true, claimed: true, completed: true, runnerPaid: false })
+  const [activeSection, setActiveSection] = useState<Section>('all')
+  const [statusCounts, setStatusCounts] = useState<Record<Section, number>>({
+    all: 0, pendingPayment: 0, posted: 0, claimed: 0, completed: 0, runnerPaid: 0,
+  })
   const [confirmModal, setConfirmModal] = useState<Task | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionError, setActionError] = useState('')
@@ -66,23 +85,33 @@ export default function MyPostedTasks() {
     setLoading(true)
     setError('')
     try {
-      const res = await tasksApi.getMyPosted(targetPage, PAGE_SIZE, targetTaskId)
+      const res = await tasksApi.getMyPosted(targetPage, PAGE_SIZE, targetTaskId, activeSection)
       const inner = res.data?.data
       const raw: Task[] = inner?.tasks || inner?.Tasks || []
       setTasks(raw.map(t => ({ ...t, taskDescription: DOMPurify.sanitize(t.taskDescription || '', { ALLOWED_TAGS: [] }), area: DOMPurify.sanitize(t.area || '', { ALLOWED_TAGS: [] }), helperName: DOMPurify.sanitize(t.helperName || '', { ALLOWED_TAGS: [] }), helperContact: DOMPurify.sanitize(t.helperContact || '', { ALLOWED_TAGS: [] }), category: DOMPurify.sanitize(t.category || '', { ALLOWED_TAGS: [] }) })))
       setTotalTasks(Number(inner?.count ?? raw.length))
       setTotalPages(Math.max(1, Number(inner?.totalPages ?? 1)))
+      if (inner?.statusCounts) {
+        setStatusCounts({
+          all: Number(inner.statusCounts.all ?? 0),
+          pendingPayment: Number(inner.statusCounts.pendingPayment ?? 0),
+          posted: Number(inner.statusCounts.posted ?? 0),
+          claimed: Number(inner.statusCounts.claimed ?? 0),
+          completed: Number(inner.statusCounts.completed ?? 0),
+          runnerPaid: Number(inner.statusCounts.runnerPaid ?? 0),
+        })
+      }
       if (inner?.page) setPage(Number(inner.page))
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load tasks. Please try again.')
     } finally {
       setLoading(false)
     }
-  }, [page])
+  }, [activeSection, page])
 
   const linkedTaskId = searchParams.get('taskId')
   useEffect(() => {
-    void loadTasks(page, page === 1 ? linkedTaskId ?? undefined : undefined)
+    void loadTasks(page, linkedTaskId ?? undefined)
   }, [linkedTaskId, loadTasks, page])
 
   useEffect(() => {
@@ -95,26 +124,20 @@ export default function MyPostedTasks() {
     if (!target || loading || tasks.length === 0) return
     const task = tasks.find(t => String(t.taskId) === target)
     if (!task) return
-    const status = normStatus(task.taskStatus)
-    const section: Section = status === 'awaitingconfirmation' ? 'completed' : status === 'completed' ? 'completed' : ['claimed', 'in_progress'].includes(status) ? 'claimed' : status === 'posted' ? 'posted' : 'pendingPayment'
-    setExpanded(e => ({ ...e, [section]: true }))
+    const category = taskSection(task)
+    if (activeSection !== 'all' && activeSection !== category) return
+    if (activeSection === 'all') {
+      setActiveSection(category)
+      setPage(1)
+      return
+    }
     requestAnimationFrame(() => document.getElementById(`posted-task-${target}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
-    if (searchParams.get('action') === 'confirm' && status === 'awaitingconfirmation') setConfirmModal(task)
+    if (searchParams.get('action') === 'confirm' && normStatus(task.taskStatus) === 'awaitingconfirmation') setConfirmModal(task)
     setSearchParams(params => {
       params.delete('taskId')
       return params
     }, { replace: true })
-  }, [searchParams, loading, tasks, setSearchParams])
-
-  const grouped = {
-    pendingPayment: tasks.filter(t => normStatus(t.taskStatus) === 'pendingpayment'),
-    posted: tasks.filter(t => normStatus(t.taskStatus) === 'posted'),
-    claimed: tasks.filter(t => ['claimed', 'inprogress'].includes(normStatus(t.taskStatus))),
-    completed: tasks.filter(t => normStatus(t.taskStatus) === 'awaitingconfirmation'),
-    runnerPaid: tasks.filter(t => ['runnerpaid', 'confirmed', 'payoutpending'].includes(normStatus(t.taskStatus))),
-  }
-
-  const toggle = (s: Section) => setExpanded(e => ({ ...e, [s]: !e[s] }))
+  }, [activeSection, searchParams, loading, tasks, setSearchParams])
 
   const handleConfirm = async () => {
     if (!confirmModal) return
@@ -157,24 +180,58 @@ export default function MyPostedTasks() {
     }
   }
 
-  const sections: { key: Section; icon: string; label: string }[] = [
-    { key: 'pendingPayment', icon: 'fa-exclamation-circle', label: 'Pending Payment' },
-    { key: 'posted', icon: 'fa-bullhorn', label: 'Live on Browse Errands' },
-    { key: 'claimed', icon: 'fa-spinner', label: 'In Progress' },
-    { key: 'completed', icon: 'fa-clock', label: 'Awaiting Confirmation' },
-    { key: 'runnerPaid', icon: 'fa-check-circle', label: 'Completed' },
-  ]
-
   return (
     <>
       <div className="my-posted-page">
         <div className="page-header"><div className="container"><h1><i className="fas fa-list-check" /> My Posted Tasks</h1><p>Manage and track your posted tasks</p></div></div>
         <div className="container">
           {error && <div className="alert alert-error mb-4" role="alert"><i className="fas fa-exclamation-circle" /> {error} <button className="btn btn-secondary btn-sm" onClick={() => void loadTasks(page)}>Retry</button></div>}
-          {loading ? <div className="loading-state"><div className="spinner" /><p>Loading your posted tasks...</p></div> : tasks.length === 0 ? <><div className="empty-state"><i className="fas fa-clipboard-list" /><h3>No Posted Tasks</h3><p>You haven't posted any tasks yet.</p><button className="btn btn-primary" onClick={handlePostErrand}>Post Your First Task</button></div>{ProfileIncompleteModal}</> : sections.map(({ key, icon, label }) => grouped[key].length > 0 && (
-            <div key={key} className="status-section">
-              <button className="status-heading" onClick={() => toggle(key)}><span><i className={`fas ${icon}`} /> {label} ({grouped[key].length})</span><i className={`fas fa-chevron-${expanded[key] ? 'up' : 'down'}`} /></button>
-              {expanded[key] && <div className="tasks-grid">{grouped[key].map(task => (
+          {statusCounts.all > 0 && <div className="posted-task-tabs" role="tablist" aria-label="Task status">
+            {TASK_SECTIONS.map(({ key, icon, label }) => (
+              <button
+                key={key}
+                id={`posted-tab-${key}`}
+                className={`posted-task-tab ${activeSection === key ? 'active' : ''}`}
+                role="tab"
+                aria-selected={activeSection === key}
+                aria-controls="posted-task-panel"
+                onClick={() => { setActiveSection(key); setPage(1) }}
+                onKeyDown={event => {
+                  const currentIndex = TASK_SECTIONS.findIndex(section => section.key === key)
+                  const nextIndex = event.key === 'ArrowRight'
+                    ? (currentIndex + 1) % TASK_SECTIONS.length
+                    : event.key === 'ArrowLeft'
+                      ? (currentIndex - 1 + TASK_SECTIONS.length) % TASK_SECTIONS.length
+                      : event.key === 'Home'
+                        ? 0
+                        : event.key === 'End'
+                          ? TASK_SECTIONS.length - 1
+                          : currentIndex
+                  if (nextIndex === currentIndex) return
+                  event.preventDefault()
+                  const nextSection = TASK_SECTIONS[nextIndex].key
+                  setActiveSection(nextSection)
+                  setPage(1)
+                  document.getElementById(`posted-tab-${nextSection}`)?.focus()
+                }}
+              >
+                <i className={`fas ${icon}`} />
+                <span>{label}</span>
+                <span className="posted-task-tab-count">{statusCounts[key]}</span>
+              </button>
+            ))}
+          </div>}
+          {loading ? <div className="loading-state"><div className="spinner" /><p>Loading your posted tasks...</p></div> : totalTasks === 0 && activeSection === 'all' ? <><div className="empty-state"><i className="fas fa-clipboard-list" /><h3>No Posted Tasks</h3><p>You haven't posted any tasks yet.</p><button className="btn btn-primary" onClick={handlePostErrand}>Post Your First Task</button></div>{ProfileIncompleteModal}</> : tasks.length === 0 ? (
+            <div className="empty-state posted-task-empty">
+              <i className={`fas ${TASK_SECTIONS.find(section => section.key === activeSection)?.icon || 'fa-list'}`} />
+              <h3>No {TASK_SECTIONS.find(section => section.key === activeSection)?.label} Tasks</h3>
+              <p>There are no tasks in this status right now.</p>
+              <button className="btn btn-outline" onClick={() => { setActiveSection('all'); setPage(1) }}>View All Tasks</button>
+            </div>
+          ) : <div id="posted-task-panel" className="tasks-grid" role="tabpanel" aria-labelledby={`posted-tab-${activeSection}`}>
+            {tasks.map(task => {
+              const key = taskSection(task)
+              return (
                 <div id={`posted-task-${task.taskId}`} key={task.taskId || task.id} className="task-card">
                   <div className="task-card-header"><span className={getStatusBadge(task.taskStatus)}>{task.taskStatus}</span><div className="task-budget">R{task.budget}</div></div>
                   <div className="task-card-body">
@@ -190,9 +247,9 @@ export default function MyPostedTasks() {
                     {key === 'runnerPaid' && <div className="action-row"><button className="btn btn-primary btn-sm flex-1" onClick={() => setDetailsModal(task)}>View Details</button>{task.helperContact && <a href={`tel:${task.helperContact}`} className="btn btn-outline btn-sm"><i className="fas fa-phone" /></a>}{!ratedTaskIds.has(task.taskId) && <button className="btn btn-outline btn-sm" onClick={() => { setRatingModal(task); setRatingReview(''); setRatingValue(5); setRatingError('') }}><i className="fas fa-star" /> Rate</button>}</div>}
                   </div>
                 </div>
-              ))}</div>}
-            </div>
-          ))}
+              )
+            })}
+          </div>}
           {!loading && <Pagination
             page={page}
             pageSize={PAGE_SIZE}

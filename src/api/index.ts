@@ -24,7 +24,7 @@ export const tasksApi = {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), ...filters })
     return api.get(`/tasks/available?${params}`)
   },
-  getMyPosted: (page = 1, pageSize = 10, taskId?: string) => api.get('/tasks/my-posted', { params: { page, pageSize, taskId } }),
+  getMyPosted: (page = 1, pageSize = 10, taskId?: string, status?: string) => api.get('/tasks/my-posted', { params: { page, pageSize, taskId, status } }),
   getMyPostedAll: async (): Promise<Task[]> => {
     const firstResponse = await api.get('/tasks/my-posted', { params: { page: 1, pageSize: 50 } })
     const firstPage = firstResponse.data?.data
