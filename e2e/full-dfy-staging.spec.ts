@@ -58,6 +58,7 @@ async function provisionFreshCreator(api: APIRequestContext) {
       userType: 'creator',
       idNumber,
       address: '123 Test Street, Johannesburg',
+      dateOfBirth: '1990-01-01T00:00:00.000Z',
       password,
       confirmPassword: password,
     },
