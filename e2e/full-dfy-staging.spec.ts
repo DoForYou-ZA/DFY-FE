@@ -176,15 +176,16 @@ test.describe('full DFY Paystack lifecycle', () => {
 
     await page.goto(checkoutUrl, { waitUntil: 'domcontentloaded', timeout: 60_000 })
 
-    const cardNumber = page.locator('input[autocomplete="cc-number"], input[name*="card"][name*="number" i], input[placeholder*="card number" i]').first()
-    const expiry = page.locator('input[autocomplete="cc-exp"], input[name*="expir" i], input[placeholder*="MM" i]').first()
-    const cvv = page.locator('input[autocomplete="cc-csc"], input[name*="cvv" i], input[name*="cvc" i], input[placeholder*="CVV" i]').first()
+    // Paystack Test Mode exposes reusable test cards directly in Checkout.
+    // Select the successful test-card option so no card data is stored in DFY code.
+    const testCardLink = page.getByText(/use a test card/i).first()
+    if (await testCardLink.count()) {
+      await testCardLink.click()
+    }
 
-    await expect(cardNumber).toBeVisible({ timeout: 30_000 })
-    await cardNumber.fill('4084 0840 8408 4081')
-    await expiry.fill('09/27')
-    await cvv.fill('408')
-
+    const successCard = page.getByText(/success/i).first()
+    await expect(successCard).toBeVisible({ timeout: 30_000 })
+    await successCard.click()
     const payButton = page.getByRole('button', { name: /pay/i }).last()
     await expect(payButton).toBeVisible({ timeout: 15_000 })
 
