@@ -58,7 +58,26 @@ async function gotoWithRetry(page: Page, url: string) {
   throw lastError
 }
 
+async function waitForApiReady() {
+  const api = await request.newContext()
+  try {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      try {
+        const response = await api.get('https://dfy-be-staging.onrender.com/health', { timeout: 10_000 })
+        if (response.ok()) return
+      } catch {
+        // Render may still be warming/redeploying the staging API.
+      }
+      await new Promise(resolve => setTimeout(resolve, 2000))
+    }
+    throw new Error('DFY staging API did not become healthy within 60 seconds.')
+  } finally {
+    await api.dispose()
+  }
+}
+
 async function register(page: Page, email: string, userType: 'creator' | 'runner') {
+  await waitForApiReady()
   await gotoWithRetry(page, '/register')
 
   const registerRequest = page.waitForResponse((res) =>
@@ -85,6 +104,7 @@ async function register(page: Page, email: string, userType: 'creator' | 'runner
 }
 
 async function login(page: Page, email: string) {
+  await waitForApiReady()
   await gotoWithRetry(page, '/login')
   const loginRequest = page.waitForResponse((res) =>
     res.url().includes('/auth/login') && res.request().method() === 'POST',

@@ -136,7 +136,7 @@ export default function BankAccounts() {
         </div>
         <div className="bank-page-heading-meta">
           <span><i className="fas fa-lock" /> Secure verification</span>
-          <span><i className="fas fa-building-columns" /> Direct Ozow payouts</span>
+          <span><i className="fas fa-building-columns" /> Direct Paystack payouts</span>
         </div>
       </section>
 
@@ -153,7 +153,7 @@ export default function BankAccounts() {
             <div className="bank-account-card-icon"><i className="fas fa-plus" /></div>
           </div>
 
-          <p className="bank-panel-description">Your details are securely verified before DFY releases a direct payout through Ozow.</p>
+          <p className="bank-panel-description">Your details are securely verified before DFY releases a direct payout through Paystack.</p>
 
           <div className="bank-security-note"><i className="fas fa-lock" /><span>Your banking information is encrypted and used only for payout verification and settlement.</span></div>
 

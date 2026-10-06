@@ -188,8 +188,9 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
       headers: { Authorization: 'Bearer ' + adminToken },
       data: { reason: 'Automated E2E: simulate 24-hour confirmation expiry' },
     })
-    expect(expire.ok()).toBeTruthy()
-    const expireBody = await expire.json()
+    const expireResponseText = await expire.text()
+    expect(expire.ok(), `expire-confirmation failed: HTTP ${expire.status()} body=${expireResponseText}`).toBeTruthy()
+    const expireBody = JSON.parse(expireResponseText)
     expect(expireBody.success).toBeTruthy()
 
     // 7. Verify the escrow hand-off without allowing the Ozow payout processor

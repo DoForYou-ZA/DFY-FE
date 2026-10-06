@@ -59,7 +59,7 @@ export default function AdminPayments() {
       <div className="page-header">
         <div className="container">
           <h1><i className="fas fa-credit-card" /> Payments Overview</h1>
-          <p>Ozow collections, direct runner payouts and bank verification</p>
+          <p>Paystack collections, direct runner payouts and bank verification</p>
         </div>
       </div>
 
