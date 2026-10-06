@@ -86,3 +86,6 @@ export function PaymentCancelled() {
     </div>
   )
 }
+
+
+// Paystack checkout return flow validated against staging schema-heal lifecycle.
