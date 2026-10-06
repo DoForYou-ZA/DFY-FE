@@ -10,7 +10,6 @@ export function PaymentSuccess() {
   const taskId = params.get('taskId') || params.get('transactionReference') || params.get('transactionreference')
 
   useEffect(() => {
-    let cancelled = false
     let interval: ReturnType<typeof setInterval> | undefined
     let attempts = 0
 
@@ -52,9 +51,7 @@ export function PaymentSuccess() {
     interval = setInterval(() => { void check() }, 2000)
 
     return () => {
-      cancelled = true
       if (interval) clearInterval(interval)
-      void cancelled
     }
   }, [navigate, taskId])
 
