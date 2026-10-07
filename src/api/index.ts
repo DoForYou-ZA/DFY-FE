@@ -67,6 +67,7 @@ export const bankingApi = {
   getBanks: () => api.get('/banking/banks'),
   addBankAccount: (data: object) => api.post('/banking/accounts', data),
   verifyBankAccount: (id: number) => api.post(`/banking/bank-accounts/${id}/verify`, {}),
+  setDefaultPayoutAccount: (id: number) => api.put(`/banking/bank-accounts/${id}/default`, {}),
   removeBankAccount: (id: number) => api.delete(`/banking/bank-accounts/${id}`),
 }
 

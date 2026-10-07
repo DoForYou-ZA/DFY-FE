@@ -15,6 +15,7 @@ interface BankAccount {
   accountHolderName: string
   accountType: string
   isVerified: boolean
+  isDefaultPayout: boolean
   verificationMessage?: string | null
   createdAt: string
 }
@@ -156,6 +157,22 @@ export default function BankAccounts() {
     }
   }
 
+  const setDefaultPayoutAccount = async (account: BankAccount) => {
+    setSaving(true)
+    setError('')
+    setSuccess('')
+    try {
+      const response = await bankingApi.setDefaultPayoutAccount(account.id)
+      await load()
+      setSuccess(response.data?.message || 'Default payout account updated.')
+    } catch (err: any) {
+      await load()
+      setError(err.response?.data?.message || 'Unable to update the default payout account.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const payoutReadyCount = accounts.filter(account => account.isVerified).length
   const isTestFixture = (account: BankAccount) =>
     account.bankCode?.toUpperCase() === 'DFY-E2E' ||
@@ -247,6 +264,7 @@ export default function BankAccounts() {
           <p className="bank-panel-description">
             {payoutReadyCount} of {accounts.length} active {accounts.length === 1 ? 'account is' : 'accounts are'} verified and ready for payouts.
           </p>
+          <p className="bank-panel-description">Choose which verified account receives new payouts. Existing payouts keep their original destination.</p>
 
           {loading ? (
             <div className="admin-empty"><i className="fas fa-spinner fa-spin" /><p>Loading bank accounts...</p></div>
@@ -268,9 +286,10 @@ export default function BankAccounts() {
                   </div>
                   <div className="bank-account-row-actions">
                     <span className={`admin-status ${account.isVerified ? 'success' : 'warning'}`}>
-                      <i className={`fas ${account.isVerified ? 'fa-circle-check' : 'fa-triangle-exclamation'}`} /> {account.isVerified ? 'Ready for payouts' : isTestFixture(account) ? 'E2E test account' : 'Not verified for payouts'}
+                      <i className={`fas ${account.isVerified ? 'fa-circle-check' : 'fa-triangle-exclamation'}`} /> {account.isVerified ? account.isDefaultPayout ? 'Default payout account' : 'Ready for payouts' : isTestFixture(account) ? 'E2E test account' : 'Not verified for payouts'}
                     </span>
                     {!account.isVerified && !isTestFixture(account) && <button type="button" className="btn btn-secondary btn-sm" onClick={() => retryVerification(account.id)} disabled={verifyingId === account.id || removingId === account.id}>{verifyingId === account.id ? 'Verifying...' : 'Retry verification'}</button>}
+                    {account.isVerified && !account.isDefaultPayout && <button type="button" className="btn btn-secondary btn-sm" onClick={() => void setDefaultPayoutAccount(account)} disabled={saving || removingId === account.id}>Make default</button>}
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => void removeAccount(account)} disabled={removingId === account.id || verifyingId === account.id}>
                       {removingId === account.id ? 'Removing...' : 'Remove'}
                     </button>
