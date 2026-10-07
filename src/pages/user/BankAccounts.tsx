@@ -174,6 +174,9 @@ export default function BankAccounts() {
   }
 
   const payoutReadyCount = accounts.filter(account => account.isVerified).length
+  const displayedAccounts = [...accounts].sort(
+    (left, right) => Number(right.isDefaultPayout) - Number(left.isDefaultPayout),
+  )
   const isTestFixture = (account: BankAccount) =>
     account.bankCode?.toUpperCase() === 'DFY-E2E' ||
     account.bankName.toLowerCase() === 'dfy e2e test bank'
@@ -274,7 +277,7 @@ export default function BankAccounts() {
             <div className="admin-empty"><i className="fas fa-building-columns" /><p>No active bank accounts have been added yet.</p><span>Add an account above to enable direct payouts.</span></div>
           ) : (
             <div className="bank-account-list">
-              {accounts.map(account => (
+              {displayedAccounts.map(account => (
                 <div key={account.id} className={`bank-account-row${isTestFixture(account) ? ' bank-account-row-test-fixture' : ''}`}>
                   <div className="bank-account-row-main">
                     <div className="bank-account-row-icon"><i className="fas fa-building-columns" /></div>
