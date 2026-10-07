@@ -2979,6 +2979,13 @@
   font-size: .72rem;
 }
 
+.user-workspace-shell .bank-account-verification-message {
+  flex-basis: 100%;
+  color: #b45309;
+  font-size: .72rem;
+  text-align: right;
+}
+
 .user-workspace-shell .bank-account-error {
   margin: 0;
   border-radius: 11px;

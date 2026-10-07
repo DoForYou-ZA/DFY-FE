@@ -112,20 +112,6 @@ async function adminVerify(api: APIRequestContext, adminToken: string, taskId: s
   expect(response.ok(), `bulk verify failed: HTTP ${response.status()} body=${await response.text()}`).toBeTruthy()
 }
 
-async function claimAndCompleteViaApi(api: APIRequestContext, runnerToken: string, taskId: string) {
-  const claim = await api.post(`${API_BASE_URL}/tasks/${encodeURIComponent(taskId)}/claim`, {
-    headers: { Authorization: 'Bearer ' + runnerToken, 'Content-Type': 'application/json' },
-    data: { HelperName: 'DFY E2E Runner', HelperContact: '0820000000', TermsAccepted: true },
-  })
-  expect(claim.ok(), `claim failed: HTTP ${claim.status()} body=${await claim.text()}`).toBeTruthy()
-
-  const complete = await api.post(`${API_BASE_URL}/tasks/${encodeURIComponent(taskId)}/complete`, {
-    headers: { Authorization: 'Bearer ' + runnerToken, 'Content-Type': 'application/json' },
-    data: {},
-  })
-  expect(complete.ok(), `complete failed: HTTP ${complete.status()} body=${await complete.text()}`).toBeTruthy()
-}
-
 async function getTask(api: APIRequestContext, token: string, taskId: string) {
   const response = await api.get(`${API_BASE_URL}/tasks/${encodeURIComponent(taskId)}`, {
     headers: { Authorization: 'Bearer ' + token },
@@ -135,41 +121,30 @@ async function getTask(api: APIRequestContext, token: string, taskId: string) {
   return body.data
 }
 
-async function ensureRunnerBank(api: APIRequestContext, runnerToken: string, creatorToken: string, adminToken: string) {
+async function ensureRunnerBank(api: APIRequestContext, runnerToken: string) {
   const existing = await api.get(`${API_BASE_URL}/banking/accounts`, {
     headers: { Authorization: 'Bearer ' + runnerToken },
   })
-  if (existing.ok()) {
-    const body = await existing.json()
-    const accounts = body.data || body.accounts || []
-    if (Array.isArray(accounts) && accounts.some((a: any) => a.isVerified === true || a.IsVerified === true)) return
+  expect(existing.ok(), `Could not check runner payout settings: HTTP ${existing.status()} body=${await existing.text()}`).toBeTruthy()
+  const body = await existing.json()
+  const accounts = body.data || body.accounts || []
+  if (!Array.isArray(accounts) || !accounts.some((account: any) => account.isVerified === true || account.IsVerified === true)) {
+    test.skip(true, 'Configure an active, Paystack-verified runner bank account with a recipient reference before running payout lifecycle E2E.')
   }
-
-  // The staging-only expiry harness creates a verified E2E payout account. Use a
-  // disposable task to provision that prerequisite, then reuse the same runner
-  // account for the confirmation/dispute payout tests.
-  const seed = await createTask(api, creatorToken, 'BANK-SEED-' + Date.now())
-  await adminVerify(api, adminToken, seed.taskId)
-  await claimAndCompleteViaApi(api, runnerToken, seed.taskId)
-
-  const expire = await api.patch(`${API_BASE_URL}/admin/tasks/${encodeURIComponent(seed.taskId)}/expire-confirmation`, {
-    headers: { Authorization: 'Bearer ' + adminToken, 'Content-Type': 'application/json' },
-    data: { reason: 'Provision verified staging runner bank for full E2E.' },
-  })
-  expect(expire.ok(), `bank seed expiry failed: HTTP ${expire.status()} body=${await expire.text()}`).toBeTruthy()
 }
 
-test.describe('full DFY Paystack lifecycle', () => {
-  test('creator posts -> Paystack checkout initializes -> runner completes -> creator confirms -> payout is queued', async ({ page, request }) => {
+test.describe('DFY escrow and dispute workflow', () => {
+  test('admin-verified test payment -> runner completes -> creator confirms -> payout is queued', async ({ page, request }) => {
+    const runnerToken = await apiLogin(request, requireEnv('DFY_RUNNER_EMAIL', RUNNER_EMAIL), requireEnv('DFY_RUNNER_PASSWORD', RUNNER_PASSWORD))
+    await ensureRunnerBank(request, runnerToken)
     const freshCreator = await provisionFreshCreator(request)
     const creatorToken = await apiLogin(request, freshCreator.email, freshCreator.password)
-    const runnerToken = await apiLogin(request, requireEnv('DFY_RUNNER_EMAIL', RUNNER_EMAIL), requireEnv('DFY_RUNNER_PASSWORD', RUNNER_PASSWORD))
     const adminToken = await apiLogin(request, requireEnv('DFY_ADMIN_EMAIL', ADMIN_EMAIL), requireEnv('DFY_ADMIN_PASSWORD', ADMIN_PASSWORD))
-    await ensureRunnerBank(request, runnerToken, creatorToken, adminToken)
 
     const created = await createTask(request, creatorToken, 'CONFIRM-' + Date.now())
 
-    // Real Paystack transaction initialization occurs in the staging backend.
+    // Verify checkout initialization; this workflow deliberately admin-verifies
+    // the payment state instead of completing Paystack Checkout.
     const paymentUrl = await request.get(`${API_BASE_URL}/tasks/${encodeURIComponent(created.taskId)}/payment-url`, {
       headers: { Authorization: 'Bearer ' + creatorToken },
     })
@@ -231,11 +206,11 @@ test.describe('full DFY Paystack lifecycle', () => {
   })
 
   test('runner dispute freezes escrow -> admin resolves dispute -> payout path is re-opened', async ({ browser, page, request }) => {
+    const runnerToken = await apiLogin(request, requireEnv('DFY_RUNNER_EMAIL', RUNNER_EMAIL), requireEnv('DFY_RUNNER_PASSWORD', RUNNER_PASSWORD))
+    await ensureRunnerBank(request, runnerToken)
     const freshCreator = await provisionFreshCreator(request)
     const creatorToken = await apiLogin(request, freshCreator.email, freshCreator.password)
-    const runnerToken = await apiLogin(request, requireEnv('DFY_RUNNER_EMAIL', RUNNER_EMAIL), requireEnv('DFY_RUNNER_PASSWORD', RUNNER_PASSWORD))
     const adminToken = await apiLogin(request, requireEnv('DFY_ADMIN_EMAIL', ADMIN_EMAIL), requireEnv('DFY_ADMIN_PASSWORD', ADMIN_PASSWORD))
-    await ensureRunnerBank(request, runnerToken, creatorToken, adminToken)
 
     const created = await createTask(request, creatorToken, 'DISPUTE-' + Date.now())
     await adminVerify(request, adminToken, created.taskId)

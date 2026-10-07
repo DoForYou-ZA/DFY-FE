@@ -14,6 +14,7 @@ interface BankAccount {
   accountHolderName: string
   accountType: string
   isVerified: boolean
+  verificationMessage?: string | null
   createdAt: string
 }
 
@@ -23,6 +24,7 @@ export default function BankAccounts() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [verifyingId, setVerifyingId] = useState<number | null>(null)
+  const [removingId, setRemovingId] = useState<number | null>(null)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
   const [banksError, setBanksError] = useState('')
@@ -92,6 +94,7 @@ export default function BankAccounts() {
       })
 
       const payload = response.data
+      await load()
       if (payload?.success === false) {
         setError(payload.message || 'Bank account verification failed.')
         return
@@ -99,8 +102,8 @@ export default function BankAccounts() {
 
       setSuccess(payload?.message || 'Bank account added and verified successfully.')
       setForm({ bankGroupId: '', accountNumber: '', accountHolderName: '', accountType: 'Savings' })
-      await load()
     } catch (err: any) {
+      await load()
       setError(err.response?.data?.message || err.message || 'Unable to add bank account.')
     } finally {
       setSaving(false)
@@ -113,18 +116,46 @@ export default function BankAccounts() {
     setSuccess('')
     try {
       const response = await bankingApi.verifyBankAccount(id)
+      await load()
       if (response.data?.success === false) {
         setError(response.data?.message || 'Bank verification failed.')
         return
       }
       setSuccess(response.data?.message || 'Bank account verified successfully.')
-      await load()
     } catch (err: any) {
+      await load()
       setError(err.response?.data?.message || 'Unable to verify the bank account.')
     } finally {
       setVerifyingId(null)
     }
   }
+
+  const removeAccount = async (account: BankAccount) => {
+    if (!window.confirm(`Remove ${account.bankName} account ${account.accountNumber} from your payout settings?`))
+      return
+
+    setRemovingId(account.id)
+    setError('')
+    setSuccess('')
+    try {
+      const response = await bankingApi.removeBankAccount(account.id)
+      await load()
+      setSuccess(response.data?.message || 'Bank account removed.')
+    } catch (err: any) {
+      await load()
+      const status = err.response?.status
+      const message = err.response?.data?.message
+      setError(message || (status === 404 || status === 405
+        ? 'Bank-account removal is not available on this backend version yet. Deploy the backend update, then try again.'
+        : status === 409
+          ? 'This account is linked to a payout in progress and cannot be removed yet.'
+          : 'Unable to remove the bank account. Please try again.'))
+    } finally {
+      setRemovingId(null)
+    }
+  }
+
+  const payoutReadyCount = accounts.filter(account => account.isVerified).length
 
   return (
     <div className="bank-accounts-page admin-page">
@@ -207,9 +238,11 @@ export default function BankAccounts() {
               <span className="admin-panel-kicker">Settlement accounts</span>
               <h2>Your bank accounts</h2>
             </div>
-            <span className="bank-account-count">{accounts.length}</span>
+            <span className="bank-account-count" aria-label={`${accounts.length} active bank accounts`}>{accounts.length}</span>
           </div>
-          <p className="bank-panel-description">Verified accounts available for direct runner payouts.</p>
+          <p className="bank-panel-description">
+            {payoutReadyCount} of {accounts.length} active {accounts.length === 1 ? 'account is' : 'accounts are'} verified and ready for payouts.
+          </p>
 
           {loading ? (
             <div className="admin-empty"><i className="fas fa-spinner fa-spin" /><p>Loading bank accounts...</p></div>
@@ -231,9 +264,13 @@ export default function BankAccounts() {
                   </div>
                   <div className="bank-account-row-actions">
                     <span className={`admin-status ${account.isVerified ? 'success' : 'warning'}`}>
-                      <i className={`fas ${account.isVerified ? 'fa-circle-check' : 'fa-clock'}`} /> {account.isVerified ? 'Verified' : 'Verification required'}
+                      <i className={`fas ${account.isVerified ? 'fa-circle-check' : 'fa-triangle-exclamation'}`} /> {account.isVerified ? 'Ready for payouts' : 'Not verified for payouts'}
                     </span>
-                    {!account.isVerified && <button type="button" className="btn btn-secondary btn-sm" onClick={() => retryVerification(account.id)} disabled={verifyingId === account.id}>{verifyingId === account.id ? 'Verifying...' : 'Verify'}</button>}
+                    {!account.isVerified && <button type="button" className="btn btn-secondary btn-sm" onClick={() => retryVerification(account.id)} disabled={verifyingId === account.id || removingId === account.id}>{verifyingId === account.id ? 'Verifying...' : 'Retry verification'}</button>}
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => void removeAccount(account)} disabled={removingId === account.id || verifyingId === account.id}>
+                      {removingId === account.id ? 'Removing...' : 'Remove'}
+                    </button>
+                    {account.verificationMessage && <small className="bank-account-verification-message">{account.verificationMessage}</small>}
                   </div>
                 </div>
               ))}

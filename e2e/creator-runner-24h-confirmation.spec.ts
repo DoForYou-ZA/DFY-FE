@@ -1,4 +1,4 @@
-import { test, expect, Page, request } from '@playwright/test'
+import { test, expect, Page, request, type APIRequestContext } from '@playwright/test'
 
 const API_BASE_URL = (process.env.DFY_API_URL || 'https://dfy-be-staging.onrender.com/api/v1').replace(/\/$/, '')
 const CREATOR_EMAIL = process.env.DFY_CREATOR_EMAIL
@@ -27,6 +27,18 @@ async function getToken(page: Page) {
   return page.evaluate(() => localStorage.getItem('token'))
 }
 
+async function ensureRunnerBank(api: APIRequestContext, runnerToken: string) {
+  const response = await api.get(API_BASE_URL + '/banking/accounts', {
+    headers: { Authorization: 'Bearer ' + runnerToken },
+  })
+  expect(response.ok(), `Could not check runner payout settings: HTTP ${response.status()} body=${await response.text()}`).toBeTruthy()
+  const body = await response.json()
+  const accounts = body.data || body.accounts || []
+  if (!Array.isArray(accounts) || !accounts.some((account: any) => account.isVerified === true || account.IsVerified === true)) {
+    test.skip(true, 'Configure an active, Paystack-verified runner bank account with a recipient reference before running payout lifecycle E2E.')
+  }
+}
+
 test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', async ({ browser, page }) => {
   const creatorEmail = requireEnv('DFY_CREATOR_EMAIL', CREATOR_EMAIL)
   const creatorPassword = requireEnv('DFY_CREATOR_PASSWORD', CREATOR_PASSWORD)
@@ -41,6 +53,16 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
   const futureDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
 
   try {
+    const runnerLogin = await api.post(API_BASE_URL + '/auth/login', {
+      data: { email: runnerEmail, password: runnerPassword },
+    })
+    expect(runnerLogin.ok(), `Runner login failed: HTTP ${runnerLogin.status()} body=${await runnerLogin.text()}`).toBeTruthy()
+    const runnerBody = await runnerLogin.json()
+    expect(runnerBody.success).toBeTruthy()
+    const runnerToken = runnerBody.token || runnerBody.data?.token
+    expect(runnerToken).toBeTruthy()
+    await ensureRunnerBank(api, String(runnerToken))
+
     // 1. Creator creates a brand-new task through the real API.
     await login(page, creatorEmail, creatorPassword)
     const creatorToken = await getToken(page)
