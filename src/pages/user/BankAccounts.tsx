@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { bankingApi } from '../../api'
+import { bankingApi, authApi } from '../../api'
 
 interface BankOption {
   bankGroupId: string
@@ -35,7 +35,7 @@ export default function BankAccounts() {
     bankGroupId: '',
     accountNumber: '',
     accountHolderName: '',
-    accountType: 'Savings',
+    accountType: 'personal',
   })
 
   const load = async () => {
@@ -44,9 +44,10 @@ export default function BankAccounts() {
     setBanksError('')
     setAccountsError('')
 
-    const [banksResult, accountsResult] = await Promise.allSettled([
+    const [banksResult, accountsResult, profileResult] = await Promise.allSettled([
       bankingApi.getBanks(),
       bankingApi.getBankAccounts(),
+      authApi.getProfile(),
     ])
 
     if (banksResult.status === 'fulfilled') {
@@ -65,6 +66,12 @@ export default function BankAccounts() {
       const err: any = accountsResult.reason
       setAccounts([])
       setAccountsError(err.response?.data?.message || 'Unable to load your bank accounts. Please try again.')
+    }
+
+    if (profileResult.status === 'fulfilled' && !form.accountHolderName) {
+      const profile = profileResult.value.data?.data ?? profileResult.value.data
+      const profileName = [profile?.firstName, profile?.lastName].filter(Boolean).join(' ').trim()
+      if (profileName) setForm(prev => ({ ...prev, accountHolderName: profileName }))
     }
 
     setLoading(false)
@@ -230,16 +237,16 @@ export default function BankAccounts() {
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Account Type</label>
+                <label className="form-label">Payout Account Type</label>
                 <select className="form-input" value={form.accountType} onChange={set('accountType')} disabled={saving}>
-                  <option value="Savings">Savings</option>
-                  <option value="Cheque">Cheque</option>
-                  <option value="Current">Current</option>
+                  <option value="personal">Personal</option>
                 </select>
+                <small className="form-help">DFY currently supports personal South African accounts for runner payouts.</small>
               </div>
               <div className="form-group">
                 <label className="form-label">Account Holder Name</label>
-                <input className="form-input" value={form.accountHolderName} onChange={set('accountHolderName')} required disabled={saving} />
+                <input className="form-input" value={form.accountHolderName} onChange={set('accountHolderName')} required disabled={saving} autoComplete="name" />
+                <small className="form-help">Enter the name exactly as registered with your bank and matching your South African ID.</small>
               </div>
               <div className="form-group">
                 <label className="form-label">Account Number</label>
