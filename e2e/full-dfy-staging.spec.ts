@@ -112,6 +112,20 @@ async function adminVerify(api: APIRequestContext, adminToken: string, taskId: s
   expect(response.ok(), `bulk verify failed: HTTP ${response.status()} body=${await response.text()}`).toBeTruthy()
 }
 
+async function claimAndCompleteViaApi(api: APIRequestContext, runnerToken: string, taskId: string) {
+  const claim = await api.post(`${API_BASE_URL}/tasks/${encodeURIComponent(taskId)}/claim`, {
+    headers: { Authorization: 'Bearer ' + runnerToken, 'Content-Type': 'application/json' },
+    data: { helperName: 'DFY E2E Runner', helperContact: '0820000000', termsAccepted: true },
+  })
+  expect(claim.ok(), `Claim failed: HTTP ${claim.status()} body=${await claim.text()}`).toBeTruthy()
+
+  const complete = await api.post(`${API_BASE_URL}/tasks/${encodeURIComponent(taskId)}/complete`, {
+    headers: { Authorization: 'Bearer ' + runnerToken, 'Content-Type': 'application/json' },
+    data: {},
+  })
+  expect(complete.ok(), `Completion failed: HTTP ${complete.status()} body=${await complete.text()}`).toBeTruthy()
+}
+
 async function getTask(api: APIRequestContext, token: string, taskId: string) {
   const response = await api.get(`${API_BASE_URL}/tasks/${encodeURIComponent(taskId)}`, {
     headers: { Authorization: 'Bearer ' + token },
