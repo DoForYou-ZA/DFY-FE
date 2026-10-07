@@ -17,12 +17,12 @@ import { test, expect, type Page, type APIRequestContext } from '@playwright/tes
 const API  = (process.env.DFY_API_URL  || 'https://dfy-be-staging.onrender.com/api/v1').replace(/\/$/, '')
 const BASE = process.env.BASE_URL       || 'https://dfy-fe-staging.onrender.com'
 
-const RUNNER_EMAIL    = process.env.DFY_RUNNER_EMAIL    ?? 'doforyouservicefreelance@gmail.com'
-const RUNNER_PASSWORD = process.env.DFY_RUNNER_PASSWORD ?? 'Abcde@123'
-const CREATOR_EMAIL   = process.env.DFY_CREATOR_EMAIL   ?? 'obakengchrismokolare@gmail.com'
-const CREATOR_PASSWORD = process.env.DFY_CREATOR_PASSWORD ?? 'Abcde@123'
-const ADMIN_EMAIL     = process.env.DFY_ADMIN_EMAIL     ?? 'admin@doforyou.com'
-const ADMIN_PASSWORD  = process.env.DFY_ADMIN_PASSWORD  ?? 'Admin123'
+const RUNNER_EMAIL    = process.env.DFY_RUNNER_EMAIL    || 'doforyouservicefreelance@gmail.com'
+const RUNNER_PASSWORD = process.env.DFY_RUNNER_PASSWORD || 'Abcde@123'
+const CREATOR_EMAIL   = process.env.DFY_CREATOR_EMAIL   || 'obakengchrismokolare@gmail.com'
+const CREATOR_PASSWORD = process.env.DFY_CREATOR_PASSWORD || 'Abcde@123'
+const ADMIN_EMAIL     = process.env.DFY_ADMIN_EMAIL     || 'admin@doforyou.com'
+const ADMIN_PASSWORD  = process.env.DFY_ADMIN_PASSWORD  || 'Admin123'
 
 test.setTimeout(6 * 60 * 1000)
 
