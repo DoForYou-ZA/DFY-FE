@@ -110,7 +110,7 @@ export default function BankAccounts() {
       }
 
       setSuccess(payload?.message || 'Bank account added and verified successfully.')
-      setForm({ bankGroupId: '', accountNumber: '', accountHolderName: '', accountType: 'Savings' })
+      setForm({ bankGroupId: '', accountNumber: '', accountHolderName: '', accountType: 'personal' })
     } catch (err: any) {
       await load()
       setError(err.response?.data?.message || err.message || 'Unable to add bank account.')
