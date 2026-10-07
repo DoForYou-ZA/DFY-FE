@@ -6131,3 +6131,33 @@
     width: 100%;
   }
 }
+
+.user-workspace-shell .bank-account-list-card {
+  container-type: inline-size;
+}
+
+@container (max-width: 560px) {
+  .user-workspace-shell .bank-account-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .user-workspace-shell .bank-account-row-main {
+    width: 100%;
+  }
+
+  .user-workspace-shell .bank-account-row-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .user-workspace-shell .bank-account-verification-message {
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .user-workspace-shell .bank-account-row-test-fixture {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
