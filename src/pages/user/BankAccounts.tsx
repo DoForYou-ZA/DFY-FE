@@ -10,6 +10,7 @@ interface BankOption {
 interface BankAccount {
   id: number
   bankName: string
+  bankCode?: string | null
   accountNumber: string
   accountHolderName: string
   accountType: string
@@ -156,6 +157,9 @@ export default function BankAccounts() {
   }
 
   const payoutReadyCount = accounts.filter(account => account.isVerified).length
+  const isTestFixture = (account: BankAccount) =>
+    account.bankCode?.toUpperCase() === 'DFY-E2E' ||
+    account.bankName.toLowerCase() === 'dfy e2e test bank'
 
   return (
     <div className="bank-accounts-page admin-page">
@@ -253,7 +257,7 @@ export default function BankAccounts() {
           ) : (
             <div className="bank-account-list">
               {accounts.map(account => (
-                <div key={account.id} className="bank-account-row">
+                <div key={account.id} className={`bank-account-row${isTestFixture(account) ? ' bank-account-row-test-fixture' : ''}`}>
                   <div className="bank-account-row-main">
                     <div className="bank-account-row-icon"><i className="fas fa-building-columns" /></div>
                     <div>
@@ -264,12 +268,13 @@ export default function BankAccounts() {
                   </div>
                   <div className="bank-account-row-actions">
                     <span className={`admin-status ${account.isVerified ? 'success' : 'warning'}`}>
-                      <i className={`fas ${account.isVerified ? 'fa-circle-check' : 'fa-triangle-exclamation'}`} /> {account.isVerified ? 'Ready for payouts' : 'Not verified for payouts'}
+                      <i className={`fas ${account.isVerified ? 'fa-circle-check' : 'fa-triangle-exclamation'}`} /> {account.isVerified ? 'Ready for payouts' : isTestFixture(account) ? 'E2E test account' : 'Not verified for payouts'}
                     </span>
-                    {!account.isVerified && <button type="button" className="btn btn-secondary btn-sm" onClick={() => retryVerification(account.id)} disabled={verifyingId === account.id || removingId === account.id}>{verifyingId === account.id ? 'Verifying...' : 'Retry verification'}</button>}
+                    {!account.isVerified && !isTestFixture(account) && <button type="button" className="btn btn-secondary btn-sm" onClick={() => retryVerification(account.id)} disabled={verifyingId === account.id || removingId === account.id}>{verifyingId === account.id ? 'Verifying...' : 'Retry verification'}</button>}
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => void removeAccount(account)} disabled={removingId === account.id || verifyingId === account.id}>
                       {removingId === account.id ? 'Removing...' : 'Remove'}
                     </button>
+                    {isTestFixture(account) && <small className="bank-account-verification-message">Seeded for lifecycle tests; it has no real bank details or Paystack recipient. Remove this test record.</small>}
                     {account.verificationMessage && <small className="bank-account-verification-message">{account.verificationMessage}</small>}
                   </div>
                 </div>
