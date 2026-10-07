@@ -6094,3 +6094,40 @@
   .user-mobile-bottom-nav { padding-inline: .3rem; }
   .user-mobile-bottom-nav__item { font-size: .58rem; }
 }
+
+.user-workspace-shell .bank-account-row-test-fixture {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 340px);
+  align-items: center;
+  border-color: #f4d7a1;
+  background: #fffcf5;
+}
+
+.user-workspace-shell .bank-account-row-test-fixture .bank-account-row-icon {
+  background: #fff5df;
+  color: #a16207;
+}
+
+.user-workspace-shell .bank-account-row-test-fixture .bank-account-row-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  justify-content: stretch;
+  gap: .45rem .65rem;
+}
+
+.user-workspace-shell .bank-account-row-test-fixture .bank-account-verification-message {
+  grid-column: 1 / -1;
+  text-align: left;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .user-workspace-shell .bank-account-row-test-fixture {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .user-workspace-shell .bank-account-row-test-fixture .bank-account-row-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+  }
+}
