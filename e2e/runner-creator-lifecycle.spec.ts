@@ -17,23 +17,12 @@ import { test, expect, type Page, type APIRequestContext } from '@playwright/tes
 const API  = (process.env.DFY_API_URL  || 'https://dfy-be-staging.onrender.com/api/v1').replace(/\/$/, '')
 const BASE = process.env.BASE_URL       || 'https://dfy-fe-staging.onrender.com'
 
-const RUNNER_EMAIL = process.env.DFY_RUNNER_EMAIL
-const RUNNER_PASSWORD = process.env.DFY_RUNNER_PASSWORD
-const CREATOR_EMAIL = process.env.DFY_CREATOR_EMAIL
-const CREATOR_PASSWORD = process.env.DFY_CREATOR_PASSWORD
-const ADMIN_EMAIL = process.env.DFY_ADMIN_EMAIL
-const ADMIN_PASSWORD = process.env.DFY_ADMIN_PASSWORD
-
-for (const [name, value] of Object.entries({
-  DFY_RUNNER_EMAIL: RUNNER_EMAIL,
-  DFY_RUNNER_PASSWORD: RUNNER_PASSWORD,
-  DFY_CREATOR_EMAIL: CREATOR_EMAIL,
-  DFY_CREATOR_PASSWORD: CREATOR_PASSWORD,
-  DFY_ADMIN_EMAIL: ADMIN_EMAIL,
-  DFY_ADMIN_PASSWORD: ADMIN_PASSWORD,
-})) {
-  if (!value) throw new Error('Missing required E2E credential: ' + name)
-}
+const RUNNER_EMAIL    = process.env.DFY_RUNNER_EMAIL    ?? 'doforyouservicefreelance@gmail.com'
+const RUNNER_PASSWORD = process.env.DFY_RUNNER_PASSWORD ?? 'Abcde@123'
+const CREATOR_EMAIL   = process.env.DFY_CREATOR_EMAIL   ?? 'obakengchrismokolare@gmail.com'
+const CREATOR_PASSWORD = process.env.DFY_CREATOR_PASSWORD ?? 'Abcde@123'
+const ADMIN_EMAIL     = process.env.DFY_ADMIN_EMAIL     ?? 'admin@doforyou.com'
+const ADMIN_PASSWORD  = process.env.DFY_ADMIN_PASSWORD  ?? 'Admin123'
 
 test.setTimeout(6 * 60 * 1000)
 
