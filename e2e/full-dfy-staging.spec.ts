@@ -149,8 +149,9 @@ async function ensureRunnerBank(api: APIRequestContext, runnerToken: string) {
 
 test.describe('DFY escrow and dispute workflow', () => {
   test('admin-verified test payment -> runner completes -> creator confirms -> payout is queued', async ({ page, request }) => {
-    const creatorEmail = requireEnv('DFY_CREATOR_EMAIL', CREATOR_EMAIL)
-    const creatorPassword = requireEnv('DFY_CREATOR_PASSWORD', CREATOR_PASSWORD)
+    const freshCreator = await provisionFreshCreator(request)
+    const creatorEmail = freshCreator.email
+    const creatorPassword = freshCreator.password
     const runnerToken = await apiLogin(request, requireEnv('DFY_RUNNER_EMAIL', RUNNER_EMAIL), requireEnv('DFY_RUNNER_PASSWORD', RUNNER_PASSWORD))
     await ensureRunnerBank(request, runnerToken)
     const creatorToken = await apiLogin(request, creatorEmail, creatorPassword)
