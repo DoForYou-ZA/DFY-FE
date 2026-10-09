@@ -3,7 +3,7 @@ import { test, expect, Page, request } from '@playwright/test'
 const PASSWORD = 'Test@1234'
 
 function makeEmail(prefix: string) {
-  return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '@test.dfy'
+  return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '@example.com'
 }
 
 function makeIdentity() {
