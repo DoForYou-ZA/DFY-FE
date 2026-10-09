@@ -14,7 +14,7 @@ test.use({
 const PASSWORD = 'Test@1234'
 
 function makeEmail(prefix: string) {
-  return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '@test.dfy'
+  return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '@example.com'
 }
 
 function makeIdentity() {
@@ -78,25 +78,43 @@ async function waitForApiReady() {
 
 async function seedBrowseTask() {
   const apiBase = (process.env.DFY_API_URL || 'https://dfy-be-staging.onrender.com/api/v1').replace(/\/$/, '')
-  const creatorEmail = process.env.DFY_CREATOR_EMAIL
-  const creatorPassword = process.env.DFY_CREATOR_PASSWORD
   const adminEmail = process.env.DFY_ADMIN_EMAIL
   const adminPassword = process.env.DFY_ADMIN_PASSWORD
 
-  if (!creatorEmail || !creatorPassword || !adminEmail || !adminPassword) {
-    throw new Error('Mobile modal E2E requires DFY_CREATOR_EMAIL, DFY_CREATOR_PASSWORD, DFY_ADMIN_EMAIL and DFY_ADMIN_PASSWORD GitHub secrets.')
+  if (!adminEmail || !adminPassword) {
+    throw new Error('Mobile modal E2E requires DFY_ADMIN_EMAIL and DFY_ADMIN_PASSWORD GitHub secrets.')
   }
 
   const api = await request.newContext()
   try {
     const login = async (email: string, password: string) => {
       const response = await api.post(apiBase + '/auth/login', { data: { email, password } })
-      if (!response.ok()) throw new Error('Login failed for ' + email + ': ' + response.status() + ' ' + await response.text())
+      if (!response.ok()) throw new Error('Login failed: ' + response.status() + ' ' + await response.text())
       const body = await response.json()
       const token = body.token ?? body.data?.token
-      if (!token) throw new Error('No token returned for ' + email)
+      if (!token) throw new Error('No token returned for login.')
       return String(token)
     }
+
+    // Use a freshly registered creator with a standards-compliant email so the
+    // Paystack checkout initializer doesn't depend on a stale staging fixture.
+    const creatorEmail = makeEmail('dfy.mobile.modal')
+    const creatorPassword = PASSWORD
+    const registration = await api.post(apiBase + '/auth/register', {
+      data: {
+        firstName: 'DFY',
+        lastName: 'Mobile E2E',
+        email: creatorEmail,
+        phoneNumber: makePhone(),
+        userType: 'creator',
+        idNumber: makeIdentity(),
+        address: '123 Test Street, Johannesburg',
+        dateOfBirth: '1990-01-01T00:00:00.000Z',
+        password: creatorPassword,
+        confirmPassword: creatorPassword,
+      },
+    })
+    if (!registration.ok()) throw new Error('Creator registration failed: ' + registration.status() + ' ' + await registration.text())
 
     const creatorToken = await login(creatorEmail, creatorPassword)
     const adminToken = await login(adminEmail, adminPassword)
