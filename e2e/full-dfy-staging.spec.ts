@@ -149,10 +149,12 @@ async function ensureRunnerBank(api: APIRequestContext, runnerToken: string) {
 
 test.describe('DFY escrow and dispute workflow', () => {
   test('admin-verified test payment -> runner completes -> creator confirms -> payout is queued', async ({ page, request }) => {
+    const freshCreator = await provisionFreshCreator(request)
+    const creatorEmail = freshCreator.email
+    const creatorPassword = freshCreator.password
     const runnerToken = await apiLogin(request, requireEnv('DFY_RUNNER_EMAIL', RUNNER_EMAIL), requireEnv('DFY_RUNNER_PASSWORD', RUNNER_PASSWORD))
     await ensureRunnerBank(request, runnerToken)
-    const freshCreator = await provisionFreshCreator(request)
-    const creatorToken = await apiLogin(request, freshCreator.email, freshCreator.password)
+    const creatorToken = await apiLogin(request, creatorEmail, creatorPassword)
     const adminToken = await apiLogin(request, requireEnv('DFY_ADMIN_EMAIL', ADMIN_EMAIL), requireEnv('DFY_ADMIN_PASSWORD', ADMIN_PASSWORD))
 
     const created = await createTask(request, creatorToken, 'CONFIRM-' + Date.now())
@@ -198,7 +200,7 @@ test.describe('DFY escrow and dispute workflow', () => {
       .toBe('awaitingconfirmation')
 
     // Creator confirms via the actual My Posted Tasks UI.
-    await loginUi(page, freshCreator.email, freshCreator.password)
+    await loginUi(page, creatorEmail, creatorPassword)
     await page.goto(`/tasks/my-posted?taskId=${encodeURIComponent(created.taskId)}`, { waitUntil: 'domcontentloaded', timeout: 60_000 })
     const postedCard = page.locator('#posted-task-' + created.taskId)
     await expect(postedCard).toBeVisible({ timeout: 30_000 })

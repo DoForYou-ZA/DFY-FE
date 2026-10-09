@@ -213,9 +213,9 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
     const expireResponseText = await expire.text()
     expect(expire.ok(), `expire-confirmation failed: HTTP ${expire.status()} body=${expireResponseText}`).toBeTruthy()
     const expireBody = JSON.parse(expireResponseText)
-    expect(expireBody.success).toBeTruthy()
+    expect(expireBody.success, `expire-confirmation returned success=false: ${expireResponseText}`).toBeTruthy()
 
-    // 7. Verify the escrow hand-off without allowing the Ozow payout processor
+    // 7. Verify the escrow hand-off without allowing the Paystack payout processor
     // to submit anything externally in E2E mode.
     const finalTask = await api.get(API_BASE_URL + '/tasks/' + encodeURIComponent(taskId), {
       headers: { Authorization: 'Bearer ' + creatorToken },

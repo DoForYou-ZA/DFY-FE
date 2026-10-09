@@ -14,7 +14,7 @@ test.use({
 const PASSWORD = 'Test@1234'
 
 function makeEmail(prefix: string) {
-  return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '@test.dfy'
+  return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '@example.com'
 }
 
 function makeIdentity() {
@@ -76,6 +76,97 @@ async function waitForApiReady() {
   }
 }
 
+async function seedBrowseTask() {
+  const apiBase = (process.env.DFY_API_URL || 'https://dfy-be-staging.onrender.com/api/v1').replace(/\/$/, '')
+  const adminEmail = process.env.DFY_ADMIN_EMAIL
+  const adminPassword = process.env.DFY_ADMIN_PASSWORD
+
+  if (!adminEmail || !adminPassword) {
+    throw new Error('Mobile modal E2E requires DFY_ADMIN_EMAIL and DFY_ADMIN_PASSWORD GitHub secrets.')
+  }
+
+  const api = await request.newContext()
+  try {
+    const login = async (email: string, password: string) => {
+      const response = await api.post(apiBase + '/auth/login', { data: { email, password } })
+      if (!response.ok()) throw new Error('Login failed: ' + response.status() + ' ' + await response.text())
+      const body = await response.json()
+      const token = body.token ?? body.data?.token
+      if (!token) throw new Error('No token returned for login.')
+      return String(token)
+    }
+
+    // Use a freshly registered creator with a standards-compliant email so the
+    // Paystack checkout initializer doesn't depend on a stale staging fixture.
+    const creatorEmail = makeEmail('dfy.mobile.modal')
+    const creatorPassword = PASSWORD
+    const registration = await api.post(apiBase + '/auth/register', {
+      data: {
+        firstName: 'DFY',
+        lastName: 'Mobile E2E',
+        email: creatorEmail,
+        phoneNumber: makePhone(),
+        userType: 'creator',
+        idNumber: makeIdentity(),
+        address: '123 Test Street, Johannesburg',
+        dateOfBirth: '1990-01-01T00:00:00.000Z',
+        password: creatorPassword,
+        confirmPassword: creatorPassword,
+      },
+    })
+    if (!registration.ok()) throw new Error('Creator registration failed: ' + registration.status() + ' ' + await registration.text())
+
+    const creatorToken = await login(creatorEmail, creatorPassword)
+    const adminToken = await login(adminEmail, adminPassword)
+    const label = 'Mobile Modal E2E ' + Date.now()
+
+    const createResponse = await api.post(apiBase + '/tasks', {
+      headers: { Authorization: 'Bearer ' + creatorToken },
+      data: {
+        taskName: label,
+        taskDescription: label + ' – automated mobile modal test.',
+        category: 'Other',
+        area: 'Johannesburg',
+        priority: 'standard',
+        dateNeeded: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+        budget: 150,
+        notes: 'Automated mobile modal E2E – safe to ignore.',
+        termsAccepted: true,
+      },
+    })
+    if (!createResponse.ok()) throw new Error('Task creation failed: ' + createResponse.status() + ' ' + await createResponse.text())
+
+    const taskBody = await createResponse.json()
+    const taskId = String(taskBody.data?.task?.taskId || '')
+    if (!/^DFY-/.test(taskId)) throw new Error('Task creation did not return a DFY task ID.')
+
+    const paymentResponse = await api.get(apiBase + '/tasks/' + encodeURIComponent(taskId) + '/payment-url', {
+      headers: { Authorization: 'Bearer ' + creatorToken },
+    })
+    if (!paymentResponse.ok()) throw new Error('Payment URL failed: ' + paymentResponse.status() + ' ' + await paymentResponse.text())
+
+    const verifyResponse = await api.patch(apiBase + '/admin/tasks/bulk-verify', {
+      headers: { Authorization: 'Bearer ' + adminToken },
+      data: { taskIds: [taskId], reason: 'Mobile modal E2E payment simulation.' },
+    })
+    if (!verifyResponse.ok()) throw new Error('Admin verification failed: ' + verifyResponse.status() + ' ' + await verifyResponse.text())
+
+    for (let attempt = 0; attempt < 15; attempt++) {
+      const taskResponse = await api.get(apiBase + '/tasks/' + encodeURIComponent(taskId), {
+        headers: { Authorization: 'Bearer ' + creatorToken },
+      })
+      if (taskResponse.ok()) {
+        const task = (await taskResponse.json()).data
+        if (String(task?.status || '').toLowerCase() === 'posted') return
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+
+    throw new Error('Seed task ' + taskId + ' did not reach Posted state.')
+  } finally {
+    await api.dispose()
+  }
+}
 async function register(page: Page, email: string, userType: 'creator' | 'runner') {
   await waitForApiReady()
   await gotoWithRetry(page, '/register')
@@ -240,6 +331,10 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('mobile task details modal', () => {
   test('view task modal stays fully inside the mobile viewport', async ({ page }) => {
+    // The public browse page is data-dependent. Seed one real Posted task so this
+    // test validates the actual modal instead of relying on pre-existing staging data.
+    await waitForApiReady()
+    await seedBrowseTask()
     await gotoWithRetry(page, '/tasks/browse')
 
     const viewTask = page.getByRole('button', { name: /view task/i }).first()

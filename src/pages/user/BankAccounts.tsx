@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { bankingApi, authApi } from '../../api'
 
 interface BankOption {
+  bankCode: string
   bankGroupId: string
   name: string
   branchCode: string
@@ -32,7 +33,7 @@ export default function BankAccounts() {
   const [banksError, setBanksError] = useState('')
   const [accountsError, setAccountsError] = useState('')
   const [form, setForm] = useState({
-    bankGroupId: '',
+    bankCode: '',
     accountNumber: '',
     accountHolderName: '',
     accountType: 'personal',
@@ -90,10 +91,11 @@ export default function BankAccounts() {
     setSuccess('')
 
     try {
-      const selectedBank = banks.find(bank => bank.bankGroupId === form.bankGroupId)
+      const selectedBank = banks.find(bank => (bank.bankCode || bank.bankGroupId) === form.bankCode)
       if (!selectedBank) throw new Error('Please select a supported bank.')
 
       const response = await bankingApi.addBankAccount({
+        bankCode: selectedBank.bankCode || selectedBank.bankGroupId,
         bankGroupId: selectedBank.bankGroupId,
         bankName: selectedBank.name,
         accountNumber: form.accountNumber,
@@ -110,7 +112,7 @@ export default function BankAccounts() {
       }
 
       setSuccess(payload?.message || 'Bank account added and verified successfully.')
-      setForm({ bankGroupId: '', accountNumber: '', accountHolderName: '', accountType: 'personal' })
+      setForm({ bankCode: '', accountNumber: '', accountHolderName: '', accountType: 'personal' })
     } catch (err: any) {
       await load()
       setError(err.response?.data?.message || err.message || 'Unable to add bank account.')
@@ -231,9 +233,9 @@ export default function BankAccounts() {
             <div className="bank-form-grid">
               <div className="form-group">
                 <label className="form-label">Bank</label>
-                <select className="form-input" value={form.bankGroupId} onChange={set('bankGroupId')} required disabled={loading || saving}>
+                <select className="form-input" value={form.bankCode} onChange={set('bankCode')} required disabled={loading || saving}>
                   <option value="">Select your bank</option>
-                  {banks.map(bank => <option key={bank.bankGroupId} value={bank.bankGroupId}>{bank.name}</option>)}
+                  {banks.map(bank => <option key={bank.bankCode || bank.bankGroupId} value={bank.bankCode || bank.bankGroupId}>{bank.name}</option>)}
                 </select>
               </div>
               <div className="form-group">

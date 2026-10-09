@@ -54,7 +54,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run staging E2E
-        run: npm test -- e2e/staging.spec.ts e2e/creator-runner-24h-confirmation.spec.ts e2e/full-dfy-staging.spec.ts
+        run: npm test -- e2e/staging.spec.ts e2e/creator-runner-24h-confirmation.spec.ts e2e/full-dfy-staging.spec.ts e2e/runner-creator-lifecycle.spec.ts
 
       - name: Upload Playwright report
         if: always()
@@ -69,9 +69,14 @@ jobs:
 
   mobile-e2e:
     runs-on: ubuntu-latest
-    needs: build
+    needs: e2e
     env:
       BASE_URL: http://127.0.0.1:4173
+      DFY_API_URL: ${{ vars.DFY_API_URL || 'https://dfy-be-staging.onrender.com/api/v1' }}
+      DFY_CREATOR_EMAIL: ${{ secrets.DFY_CREATOR_EMAIL }}
+      DFY_CREATOR_PASSWORD: ${{ secrets.DFY_CREATOR_PASSWORD }}
+      DFY_ADMIN_EMAIL: ${{ secrets.DFY_ADMIN_EMAIL }}
+      DFY_ADMIN_PASSWORD: ${{ secrets.DFY_ADMIN_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
