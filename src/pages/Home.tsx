@@ -83,9 +83,6 @@ export default function Home() {
               <div className="hero-photo-main">
                 <img src={features[1].image} alt="A glimpse of the people and everyday tasks that bring a community together" fetchPriority="high" decoding="async" />
               </div>
-              <div className="hero-photo-small">
-                <img src={features[0].image} alt="" loading="lazy" decoding="async" />
-              </div>
               <div className="hero-visual-note">
                 <span className="hero-note-icon"><i className="fas fa-handshake" aria-hidden="true" /></span>
                 <span><strong>A little help goes a long way.</strong><small>Find your next step with DoForYou.</small></span>
@@ -145,7 +142,6 @@ export default function Home() {
             </div>
             <div className="runner-image">
               <img src="/DFY.png" alt="DoForYou logo" loading="lazy" decoding="async" />
-              <div className="runner-image-caption"><i className="fas fa-map-marker-alt" aria-hidden="true" /><span>Local tasks. Flexible opportunities.</span></div>
             </div>
           </div>
         </section>

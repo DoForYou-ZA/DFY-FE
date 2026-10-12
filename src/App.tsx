@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AuthProvider } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
 import { RequireAuth, RequireAdmin, RequireRunnerAccess } from './context/Guards'
@@ -36,11 +37,18 @@ import AdminDisputes from './pages/admin/AdminDisputes'
 import AdminAuditLog from './pages/admin/AdminAuditLog'
 import { PaymentSuccess, PaymentCancelled } from './pages/PaymentPages'
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <NotificationProvider>
+          <ScrollToTop />
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />

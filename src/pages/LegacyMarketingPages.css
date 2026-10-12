@@ -64,3 +64,13 @@
 @media(max-width:900px){.legacy-marketing-page .premium-hero-grid{grid-template-columns:minmax(0,1fr) minmax(240px,.8fr);gap:2rem}.legacy-marketing-page .legacy-card-grid{grid-template-columns:1fr}.legacy-marketing-page .legacy-info-card{padding:1.3rem}.legacy-marketing-page .legacy-bottom-cta-inner{align-items:flex-start;flex-direction:column}.legacy-marketing-page .legacy-bottom-cta .marketing-actions{margin-top:.2rem}.legacy-marketing-page .contact-layout{grid-template-columns:1fr}}
 @media(max-width:680px){.legacy-marketing-page .premium-page-hero{padding:3.25rem 0 3rem}.legacy-marketing-page .premium-hero-grid,.legacy-marketing-page .legacy-split-grid{grid-template-columns:1fr;gap:2rem}.legacy-marketing-page .premium-hero-copy h1{font-size:clamp(2.45rem,9vw,3.7rem)}.legacy-marketing-page .premium-hero-visual{width:min(100%,560px);padding-left:.6rem}.legacy-marketing-page .premium-hero-photo{height:clamp(230px,58vw,340px)}.legacy-marketing-page .premium-hero-visual::before{inset:.7rem 0 0 .1rem}.legacy-marketing-page .hero-image-caption{left:1rem;max-width:calc(100% - 1.8rem);font-size:.72rem}.legacy-marketing-page .premium-trust-line{display:grid;grid-template-columns:1fr;gap:.65rem}.legacy-marketing-page .marketing-actions{width:100%}.legacy-marketing-page .marketing-actions .btn{flex:1;justify-content:center}.legacy-marketing-page .legacy-split-image{height:clamp(220px,65vw,340px)}.legacy-marketing-page .legacy-bottom-cta .marketing-actions{display:grid;grid-template-columns:1fr;width:100%}.legacy-marketing-page .contact-method-card{align-items:flex-start}.legacy-marketing-page .contact-method-icon{flex-basis:42px;width:42px;height:42px}}
 @media(prefers-reduced-motion:reduce){.legacy-marketing-page *{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* Terms page */
+.terms-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.terms-footer-note { max-width: 720px; margin: 0 auto; text-align: center; }
+.terms-footer-note h2 { margin: .4rem 0 1rem; color: #1F2937; font-size: clamp(1.8rem, 3.4vw, 2.7rem); font-weight: 850; letter-spacing: -.045em; }
+.terms-footer-note p { color: #596273; line-height: 1.8; margin: 0 0 .75rem; }
+.terms-footer-note a { color: #B85E00; font-weight: 700; text-decoration: none; }
+.terms-footer-note a:hover { color: #1F2937; }
+.terms-last-updated { font-size: .82rem; color: #9CA3AF !important; margin-top: 1.5rem !important; }
+@media (max-width: 640px) { .terms-grid { grid-template-columns: 1fr; } }

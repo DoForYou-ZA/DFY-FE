@@ -26,29 +26,28 @@ export default function Footer() {
         </div>
         <div className="footer-links">
           <div><h3>Get started</h3><ul>
-            <li><Link to="/tasks/browse">Browse tasks</Link></li>
-            <li><Link to="/for-creators">Post a task</Link></li>
-            <li><Link to="/for-runners">Become a runner</Link></li>
-            <li><Link to="/how-it-works">How it works</Link></li>
+            <li><Link to="/tasks/browse"><i className="fas fa-search footer-link-icon" />Browse tasks</Link></li>
+            <li><Link to="/for-creators"><i className="fas fa-plus-circle footer-link-icon" />Post a task</Link></li>
+            <li><Link to="/for-runners"><i className="fas fa-running footer-link-icon" />Become a runner</Link></li>
+            <li><Link to="/how-it-works"><i className="fas fa-route footer-link-icon" />How it works</Link></li>
           </ul></div>
           <div><h3>Learn & support</h3><ul>
-            <li><Link to="/faq">FAQs</Link></li>
-            <li><Link to="/payments-and-completion">Payments & completion</Link></li>
-            <li><Link to="/about">About DoForYou</Link></li>
-            <li><Link to="/contact">Contact support</Link></li>
+            <li><Link to="/faq"><i className="fas fa-question-circle footer-link-icon" />FAQs</Link></li>
+            <li><Link to="/payments-and-completion"><i className="fas fa-credit-card footer-link-icon" />Payments & completion</Link></li>
+            <li><Link to="/about"><i className="fas fa-info-circle footer-link-icon" />About DoForYou</Link></li>
+            <li><Link to="/contact"><i className="fas fa-headset footer-link-icon" />Contact support</Link></li>
           </ul></div>
           <div><h3>Policies & contact</h3><ul>
-            <li><Link to="/terms">Terms of service</Link></li>
-            <li><a href="mailto:info@doforyou.co.za?subject=Privacy%20enquiry">Privacy enquiries</a></li>
-            <li><a href="mailto:info@doforyou.co.za?subject=Cookie%20enquiry">Cookie enquiries</a></li>
-            <li><a href="https://wa.me/27795258611" target="_blank" rel="noreferrer">WhatsApp: +27 79 525 8611</a></li>
-            <li><a href="mailto:info@doforyou.co.za">info@doforyou.co.za</a></li>
+            <li><Link to="/terms"><i className="fas fa-file-alt footer-link-icon" />Terms of service</Link></li>
+            <li><a href="mailto:info@doforyou.co.za?subject=Privacy%20%26%20Cookie%20enquiry"><i className="fas fa-shield-alt footer-link-icon" />Privacy & cookies</a></li>
+            <li><a href="https://wa.me/27795258611" target="_blank" rel="noreferrer"><i className="fab fa-whatsapp footer-link-icon" />WhatsApp: +27 79 525 8611</a></li>
+            <li><a href="mailto:info@doforyou.co.za"><i className="fas fa-envelope footer-link-icon" />info@doforyou.co.za</a></li>
           </ul></div>
         </div>
       </div>
       <div className="footer-bottom"><div className="container footer-bottom-inner">
         <span>&copy; {year} DoForYou. All rights reserved.</span>
-        <span>Made in South Africa</span>
+        <span>Made with ♥ in South Africa</span>
       </div></div>
       {ProfileIncompleteModal}
     </footer>

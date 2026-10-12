@@ -63,6 +63,5 @@ export default function Contact() {
         <p className="contact-safety-note">For your security, do not include passwords, full payment card details, or one-time verification codes in this form.</p>
       </section>
     </div></main>
-    <section className="legacy-bottom-cta"><div className="container legacy-bottom-cta-inner"><div><span className="marketing-kicker">FIND AN ANSWER FASTER</span><h2>Have a quick question?</h2><p>Our FAQs explain task basics, completion review, and payment status.</p></div><div className="marketing-actions"><Link className="btn btn-primary btn-lg" to="/faq">Visit FAQs</Link><Link className="btn btn-secondary btn-lg" to="/payments-and-completion">Payments & completion</Link></div></div></section>
   </div>
 }

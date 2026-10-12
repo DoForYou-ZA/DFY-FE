@@ -494,6 +494,9 @@
 .browse-toolbar-stat{display:flex;align-items:baseline;gap:.65rem;color:#596273;font-size:.9rem}
 .browse-toolbar-stat strong{color:#1F2937;font-size:clamp(1.5rem,3vw,2rem);font-weight:850;letter-spacing:-.05em}
 .browse-toolbar-stat span{font-weight:650}
+.browse-toolbar-right{display:flex;align-items:center;gap:.75rem}
+.browse-refresh-timer{display:inline-flex;align-items:center;gap:.4rem;color:#6B7280;font-size:.82rem;font-weight:650;white-space:nowrap}
+.browse-refresh-timer i{color:#FFAB40}
 .browse-page .browse-toolbar .btn{border-radius:10px;font-weight:700}
 .browse-page .guest-alert{margin-bottom:1rem;padding:1.2rem 1.25rem;border-color:#F3D8B4;border-radius:16px;background:linear-gradient(110deg,#fff 0%,#FFF8EF 100%);box-shadow:0 7px 22px rgba(31,41,55,.04)}
 .browse-page .guest-alert>i{background:#FFF0DE;color:#B85E00;border:1px solid #F8D6AD}

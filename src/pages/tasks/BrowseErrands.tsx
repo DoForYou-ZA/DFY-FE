@@ -76,6 +76,20 @@ export default function BrowseErrands() {
     return () => clearTimeout(timer)
   }, [search, category])
 
+  const [lastUpdated, setLastUpdated] = useState(new Date())
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      load(page, search, category)
+      setLastUpdated(new Date())
+    }, 103000)
+    return () => clearInterval(interval)
+  }, [page, search, category])
+
+  const handleManualRefresh = () => {
+    setLastUpdated(new Date())
+    load(page, search, category)
+  }
   const title = (task: Task) => task.taskName || task.taskDescription || task.task_description || 'Task'
   const description = (task: Task) => task.task_description || task.taskDescription || ''
   const location = (task: Task) => task.area_suburb || task.area || 'Location to be confirmed'
@@ -155,7 +169,7 @@ export default function BrowseErrands() {
       </header>
 
       <div className="container browse-content">
-        <div className="browse-toolbar"><div className="browse-toolbar-stat"><strong>{totalItems}</strong><span>Available Tasks</span></div><button className="btn btn-secondary btn-sm" onClick={() => load(page, search, category)} disabled={loading}><i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`} /> {loading ? 'Refreshing...' : 'Refresh'}</button></div>
+        <div className="browse-toolbar"><div className="browse-toolbar-stat"><strong>{totalItems}</strong><span>Available Tasks</span></div><div className="browse-toolbar-right"><span className="browse-refresh-timer"><i className="fas fa-clock" /> Last updated: {lastUpdated.toLocaleTimeString()}</span><button className="btn btn-secondary btn-sm" onClick={handleManualRefresh} disabled={loading}><i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`} /> {loading ? 'Refreshing...' : 'Refresh'}</button></div></div>
 
       {!isAuthenticated() && <div className="container"><div className="guest-alert">
         <i className="fas fa-user-plus" /><div><h4>Ready to earn?</h4><p>Create an account to accept tasks and receive payouts directly to your bank account.</p></div>

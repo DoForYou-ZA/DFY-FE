@@ -139,8 +139,8 @@
 .runner-text h2{max-width:620px}
 .runner-image{position:relative;min-height:300px;padding:1.5rem;border:1px solid rgba(255,255,255,.12);border-radius:28px;background:linear-gradient(145deg,rgba(255,255,255,.08),rgba(255,255,255,.015))}
 .runner-image img{width:min(100%,280px);max-height:260px;border:0;background:rgba(255,255,255,.92);box-shadow:0 24px 60px rgba(0,0,0,.24)}
-.runner-image-caption{display:flex;align-items:center;justify-content:center;gap:.55rem;margin-top:1rem;color:#E5E7EB;font-size:.84rem;font-weight:650}
-.runner-image-caption i{color:#FFAB40}
+.runner-image-caption{display:flex;align-items:center;justify-content:center;gap:.65rem;margin-top:1.5rem;color:#E5E7EB;font-size:.84rem;font-weight:650}
+.runner-image-caption i{color:#FFAB40;font-size:1rem;line-height:1;flex-shrink:0;position:relative;top:1px}
 .testimonials-section{padding:clamp(4.5rem,7vw,6.5rem) 0}
 .task-journey-section{background:linear-gradient(180deg,#F8FAFC 0%,#F3F4F6 100%)}
 .journey-card{align-items:flex-start;text-align:left}
