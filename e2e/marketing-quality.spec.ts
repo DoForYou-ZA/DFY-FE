@@ -40,4 +40,29 @@ test.describe('public marketing experience', () => {
     await expect(page.getByText(/what people say/i)).toHaveCount(0)
     await expect(page.getByText(/Thabo M\.|Lerato K\.|Sipho N\./)).toHaveCount(0)
   })
+
+  test('public journey pages explain distinct creator, runner, and completion steps', async ({ page }) => {
+    const routes = [
+      { path: '/how-it-works', heading: /how doforyou works/i },
+      { path: '/for-creators', heading: /get help with your to-do list/i },
+      { path: '/for-runners', heading: /make your time count/i },
+      { path: '/faq', heading: /frequently asked questions/i },
+      { path: '/payments-and-completion', heading: /task completion and payment status/i },
+    ]
+
+    for (const route of routes) {
+      await page.goto(route.path)
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(route.heading)
+      await expect(page.locator('#main-content')).toBeVisible()
+      await expect(page.locator('footer')).toBeVisible()
+    }
+  })
+
+  test('footer has working links to help, payments, creators, and runners', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('contentinfo').getByRole('link', { name: /FAQs/i })).toHaveAttribute('href', '/faq')
+    await expect(page.getByRole('contentinfo').getByRole('link', { name: /payments & completion/i })).toHaveAttribute('href', '/payments-and-completion')
+    await expect(page.getByRole('contentinfo').getByRole('link', { name: /become a runner/i })).toHaveAttribute('href', '/for-runners')
+    await expect(page.getByRole('contentinfo').getByRole('link', { name: /contact support/i })).toHaveAttribute('href', '/contact')
+  })
 })
