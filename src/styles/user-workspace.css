@@ -6161,3 +6161,132 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* ==========================================================================
+   Sidebar collapse
+   ========================================================================== */
+
+.sidebar-collapse-btn {
+  display: none;
+  margin-left: auto;
+  align-self: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  border: none;
+  border-radius: 7px;
+  background: var(--primary, #ff8a00);
+  color: #0f1f3d;
+  cursor: pointer;
+  place-items: center;
+  font-size: .65rem;
+  transition: background 150ms;
+}
+
+.sidebar-collapse-btn:hover {
+  background: #e67a00;
+  color: #0f1f3d;
+}
+
+@media (min-width: 901px) {
+  .sidebar-collapse-btn { display: grid; }
+
+  /* Collapsed width — icons only */
+  .user-workspace-shell .admin-sidebar.is-collapsed {
+    width: 62px;
+    min-width: 62px;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .admin-brand {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: .9rem .6rem;
+    gap: .5rem;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .admin-brand-mark {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .sidebar-collapse-btn {
+    margin-left: 0;
+    margin-top: 0;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .admin-sidebar-label,
+  .user-workspace-shell .admin-sidebar.is-collapsed .admin-sidebar-section-label {
+    min-height: 8px;
+    margin: .5rem 0 .2rem;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .admin-nav-item {
+    justify-content: center;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+    border-radius: 10px;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .admin-nav-item i {
+    font-size: .95rem;
+    margin: 0;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .user-workspace-post {
+    width: 40px;
+    height: 40px;
+    margin: .4rem auto .2rem;
+    justify-content: center;
+    box-shadow: none;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .admin-sidebar-footer {
+    justify-content: center;
+    padding: .75rem .5rem;
+    gap: .5rem;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .admin-profile-mini {
+    justify-content: center;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .admin-avatar {
+    margin: 0;
+  }
+
+  /* Dot badge when collapsed */
+  .admin-nav-badge--dot {
+    min-width: 8px !important;
+    width: 8px;
+    height: 8px;
+    padding: 0 !important;
+    border-radius: 999px;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 0;
+  }
+
+  .user-workspace-shell .admin-sidebar.is-collapsed .admin-nav-item {
+    position: relative;
+  }
+
+  /* Push main content to fill the freed space */
+  .user-workspace-shell .admin-sidebar.is-collapsed ~ .admin-main {
+    margin-left: 0;
+  }
+
+  /* Hide breadcrumb/title text when sidebar is collapsed */
+  .user-workspace-shell:has(.admin-sidebar.is-collapsed) .user-workspace-topbar-context {
+    display: none;
+  }
+}

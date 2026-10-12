@@ -39,8 +39,8 @@ export default function Footer() {
           </ul></div>
           <div><h3>Policies & contact</h3><ul>
             <li><Link to="/terms"><i className="fas fa-file-alt footer-link-icon" />Terms of service</Link></li>
-            <li><a href="mailto:info@doforyou.co.za?subject=Privacy%20%26%20Cookie%20enquiry"><i className="fas fa-shield-alt footer-link-icon" />Privacy & cookies</a></li>
-            <li><a href="https://wa.me/27795258611" target="_blank" rel="noreferrer"><i className="fab fa-whatsapp footer-link-icon" />WhatsApp: +27 79 525 8611</a></li>
+            <li><Link to="/privacy"><i className="fas fa-shield-alt footer-link-icon" />Privacy & cookies</Link></li>
+            <li><a href="https://wa.me/27795258611" target="_blank" rel="noreferrer"><i className="fab fa-whatsapp footer-link-icon" />+27 79 525 8611</a></li>
             <li><a href="mailto:info@doforyou.co.za"><i className="fas fa-envelope footer-link-icon" />info@doforyou.co.za</a></li>
           </ul></div>
         </div>
