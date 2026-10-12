@@ -34,19 +34,19 @@ test.describe('public marketing experience', () => {
     await expect(video).toHaveAttribute('preload', 'metadata')
   })
 
-  test('homepage no longer renders unverified customer testimonials', async ({ page }) => {
+  test('homepage keeps the testimonial section and clear task journey', async ({ page }) => {
     await page.goto('/')
+    await expect(page.getByRole('heading', { name: /what people say/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /a clear task journey/i })).toBeVisible()
-    await expect(page.getByText(/what people say/i)).toHaveCount(0)
-    await expect(page.getByText(/Thabo M\.|Lerato K\.|Sipho N\./)).toHaveCount(0)
+    await expect(page.locator('.testimonials-section .testimonial-card')).toHaveCount(6)
   })
 
   test('public journey pages explain distinct creator, runner, and completion steps', async ({ page }) => {
     const routes = [
-      { path: '/how-it-works', heading: /how doforyou works/i },
-      { path: '/for-creators', heading: /get help with your to-do list/i },
-      { path: '/for-runners', heading: /make your time count/i },
-      { path: '/faq', heading: /frequently asked questions/i },
+      { path: '/how-it-works', heading: /from “i need a hand” to “all sorted\.”/i },
+      { path: '/for-creators', heading: /your to-do list deserves a team effort/i },
+      { path: '/for-runners', heading: /your time has value\. put it to work/i },
+      { path: '/faq', heading: /good questions deserve clear answers/i },
       { path: '/payments-and-completion', heading: /task completion and payment status/i },
     ]
 
@@ -56,6 +56,19 @@ test.describe('public marketing experience', () => {
       await expect(page.locator('#main-content')).toBeVisible()
       await expect(page.locator('footer')).toBeVisible()
     }
+  })
+
+  test('FAQ search and topic filters narrow answers accessibly', async ({ page }) => {
+    await page.goto('/faq')
+    await page.getByRole('searchbox', { name: /search frequently asked questions/i }).fill('24-hour')
+    const confirmationQuestion = page.locator('.premium-faq-item').filter({ hasText: /what happens after a runner marks a task complete/i })
+    await expect(confirmationQuestion).toBeVisible()
+    await confirmationQuestion.locator('summary').click()
+    await expect(confirmationQuestion.getByText(/creator has a 24-hour confirmation period/i)).toBeVisible()
+    await page.getByRole('searchbox', { name: /search frequently asked questions/i }).fill('')
+    await page.getByRole('button', { name: /runners/i }).click()
+    await expect(page.getByRole('heading', { name: /^runners$/i })).toBeVisible()
+    await expect(page.getByText(/how do i become a runner/i)).toBeVisible()
   })
 
   test('footer has working links to help, payments, creators, and runners', async ({ page }) => {

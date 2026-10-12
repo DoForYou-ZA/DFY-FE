@@ -11,6 +11,12 @@ const features = [
   { image: new URL('../assets/images/image3.jpeg', import.meta.url).href, title: 'Confirm Completion', description: 'Follow the task through completion and confirm the result or raise a concern.' },
 ]
 
+const testimonials = [
+  { name: 'Thabo M.', role: 'Task Creator', text: 'DoForYou helped me find someone to handle my grocery shopping within hours. Amazing service!' },
+  { name: 'Lerato K.', role: 'Task Runner', text: "I've been earning extra income on weekends by completing tasks in my area. Highly recommend!" },
+  { name: 'Sipho N.', role: 'Task Creator', text: 'The platform is so easy to use. I posted a task and had it completed the same day.' },
+]
+
 interface PublicStats {
   tasksCompleted: number
   taskCreators: number
@@ -52,87 +58,107 @@ export default function Home() {
 
   return (
     <>
-    <div className="home-page">
-      <section className="hero-section" aria-labelledby="home-heading">
-        <div className="container hero-content">
-          <div className="hero-text">
-            <div className="hero-badge"><i className="fas fa-bolt" aria-hidden="true" /> A South African task marketplace</div>
-            <h1 id="home-heading">Let’s get it done<span className="dot">.</span></h1>
-            <p>Connect with people in your area to post everyday tasks, get practical help, and earn extra income as a runner.</p>
-            <div className="hero-actions">
-              <Link to="/tasks/browse" className="btn btn-secondary btn-lg">Browse Tasks</Link>
-              <button onClick={handlePostErrand} className="btn btn-primary btn-lg">Post a Task</button>
-            </div>
-            {stats && (
-              <div className="hero-stats" aria-label="DoForYou marketplace statistics">
-                {stats.tasksCompleted > 0 && <div><strong>{formatCount(stats.tasksCompleted)}</strong><span>Tasks completed</span></div>}
-                {stats.taskCreators > 0 && <div><strong>{formatCount(stats.taskCreators)}</strong><span>Task creators</span></div>}
-                {stats.activeRunners > 0 && <div><strong>{formatCount(stats.activeRunners)}</strong><span>Active runners</span></div>}
-                {stats.averageRating > 0 && <div><strong>{stats.averageRating.toFixed(1)}/5</strong><span>Average rating</span></div>}
+      <div className="home-page">
+        <section className="hero-section" aria-labelledby="home-heading">
+          <div className="container hero-content">
+            <div className="hero-text">
+              <div className="hero-badge"><i className="fas fa-bolt" aria-hidden="true" /> A South African task marketplace</div>
+              <h1 id="home-heading">Let’s get it done<span className="dot">.</span></h1>
+              <p>Connect with people in your area to post everyday tasks, get practical help, and earn extra income as a runner.</p>
+              <div className="hero-actions">
+                <Link to="/tasks/browse" className="btn btn-secondary btn-lg">Browse Tasks</Link>
+                <button onClick={handlePostErrand} className="btn btn-primary btn-lg">Post a Task</button>
               </div>
-            )}
+              {stats && (
+                <div className="hero-stats" aria-label="DoForYou marketplace statistics">
+                  {stats.tasksCompleted > 0 && <div><strong>{formatCount(stats.tasksCompleted)}</strong><span>Tasks completed</span></div>}
+                  {stats.taskCreators > 0 && <div><strong>{formatCount(stats.taskCreators)}</strong><span>Task creators</span></div>}
+                  {stats.activeRunners > 0 && <div><strong>{formatCount(stats.activeRunners)}</strong><span>Active runners</span></div>}
+                  {stats.averageRating > 0 && <div><strong>{stats.averageRating.toFixed(1)}/5</strong><span>Average rating</span></div>}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="video-section" aria-label="DoForYou platform introduction">
-        <div className="container">
-          <video width="100%" height="auto" controls muted playsInline preload="metadata">
-            <source src="/assets/videos/DoForYou Freelance Platform Introduction.mp4" type="video/mp4" />
-            Your browser does not support the video. You can still browse tasks and learn how DoForYou works.
-          </video>
-        </div>
-      </section>
+        <section className="video-section" aria-label="DoForYou platform introduction">
+          <div className="container">
+            <video width="100%" height="auto" controls muted playsInline preload="metadata">
+              <source src="/assets/videos/DoForYou Freelance Platform Introduction.mp4" type="video/mp4" />
+              Your browser does not support the video. You can still browse tasks and learn how DoForYou works.
+            </video>
+          </div>
+        </section>
 
-      <section className="features-section" aria-labelledby="how-it-works-heading">
-        <div className="container">
-          <h2 id="how-it-works-heading" className="section-title text-center">How DoForYou works</h2>
-          <div className="features-grid">
-            {features.map((f) => (
-              <article key={f.title} className="feature-card">
-                <img src={f.image} alt="" loading="lazy" decoding="async" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                <h3>{f.title}</h3>
-                <p>{f.description}</p>
-              </article>
-            ))}
+        <section className="features-section" aria-labelledby="how-it-works-heading">
+          <div className="container">
+            <h2 id="how-it-works-heading" className="section-title text-center">How DoForYou works</h2>
+            <div className="features-grid">
+              {features.map((f) => (
+                <article key={f.title} className="feature-card">
+                  <img src={f.image} alt="" loading="lazy" decoding="async" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  <h3>{f.title}</h3>
+                  <p>{f.description}</p>
+                </article>
+              ))}
+            </div>
+            <div className="home-section-link"><Link to="/how-it-works" className="btn btn-secondary">See how the task journey works <span aria-hidden="true">→</span></Link></div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="runner-section" aria-labelledby="runner-heading">
-        <div className="container runner-inner">
-          <div className="runner-text">
-            <h2 id="runner-heading">Turn your time into opportunity</h2>
-            <h4>Find tasks that suit your skills, schedule, and location.</h4>
-            <Link to="/tasks/browse" className="btn btn-primary btn-lg">Explore Available Tasks</Link>
+        <section className="runner-section" aria-labelledby="runner-heading">
+          <div className="container runner-inner">
+            <div className="runner-text">
+              <h2 id="runner-heading">Turn your time into opportunity</h2>
+              <h4>Find tasks that suit your skills, schedule, and location.</h4>
+              <p className="runner-description">Choose tasks thoughtfully, agree on expectations before you begin, and keep the creator updated as you work.</p>
+              <Link to="/for-runners" className="btn btn-primary btn-lg">Learn about becoming a runner</Link>
+            </div>
+            <div className="runner-image">
+              <img src="/DFY.png" alt="DoForYou logo" loading="lazy" decoding="async" />
+            </div>
           </div>
-          <div className="runner-image">
-            <img src="/DFY.png" alt="DoForYou logo" loading="lazy" decoding="async" />
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="testimonials-section" aria-labelledby="completion-heading">
-        <div className="container">
-          <h2 id="completion-heading" className="section-title text-center">A clear task journey</h2>
-          <div className="testimonials-grid">
-            {[
-              { icon: 'fa-clipboard-check', title: 'Agree on the task', text: 'The creator describes the work and budget. The runner reviews the details before accepting.' },
-              { icon: 'fa-list-check', title: 'Keep progress visible', text: 'Task status helps both sides understand what has happened and what action comes next.' },
-              { icon: 'fa-shield-alt', title: 'Review completion', text: 'After a runner marks a task complete, the creator has 24 hours to confirm completion or raise a dispute.' },
-            ].map((step) => (
-              <article key={step.title} className="testimonial-card">
-                <div className="testimonial-avatar" aria-hidden="true"><i className={`fas ${step.icon}`} /></div>
-                <h3 className="testimonial-author-title">{step.title}</h3>
-                <p className="testimonial-text">{step.text}</p>
-              </article>
-            ))}
+        <section className="testimonials-section" aria-labelledby="testimonials-heading">
+          <div className="container">
+            <p className="home-section-eyebrow">FROM THE DOFORYOU COMMUNITY</p>
+            <h2 id="testimonials-heading" className="section-title text-center">What people say</h2>
+            <p className="home-section-intro">Experiences from people using DoForYou to get everyday tasks done and find local earning opportunities.</p>
+            <div className="testimonials-grid">
+              {testimonials.map((t) => (
+                <article key={t.name} className="testimonial-card">
+                  <div className="testimonial-avatar" aria-hidden="true">{t.name.charAt(0)}</div>
+                  <p className="testimonial-text">“{t.text}”</p>
+                  <div className="testimonial-author"><strong>{t.name}</strong><span>{t.role}</span></div>
+                </article>
+              ))}
+            </div>
           </div>
-          <p className="text-center" style={{ marginTop: '1.5rem', color: 'var(--text-muted)' }}>If the creator takes no action during the confirmation period, the platform follows its configured release process. Payment status is determined by the payment provider and platform records.</p>
-        </div>
-      </section>
-    </div>
-    {ProfileIncompleteModal}
+        </section>
+
+        <section className="testimonials-section task-journey-section" aria-labelledby="completion-heading">
+          <div className="container">
+            <h2 id="completion-heading" className="section-title text-center">A clear task journey</h2>
+            <p className="home-section-intro">Know what to discuss before work begins and what to do when the task is marked complete.</p>
+            <div className="testimonials-grid">
+              {[
+                { icon: 'fa-clipboard-check', title: 'Agree on the task', text: 'The creator describes the work and budget. The runner reviews the details before accepting.' },
+                { icon: 'fa-list-check', title: 'Keep progress visible', text: 'Task status helps both sides understand what has happened and what action comes next.' },
+                { icon: 'fa-shield-alt', title: 'Review completion', text: 'After a runner marks a task complete, the creator has 24 hours to confirm completion or raise a dispute.' },
+              ].map((step) => (
+                <article key={step.title} className="testimonial-card journey-card">
+                  <div className="testimonial-avatar" aria-hidden="true"><i className={`fas ${step.icon}`} /></div>
+                  <h3 className="testimonial-author-title">{step.title}</h3>
+                  <p className="testimonial-text">{step.text}</p>
+                </article>
+              ))}
+            </div>
+            <p className="home-payment-note">If the creator takes no action during the confirmation period, the platform follows its configured release process. Payment status is determined by the payment provider and platform records.</p>
+          </div>
+        </section>
+      </div>
+      {ProfileIncompleteModal}
     </>
   )
 }
