@@ -34,11 +34,11 @@ test.describe('public marketing experience', () => {
     await expect(video).toHaveAttribute('preload', 'metadata')
   })
 
-  test('homepage no longer renders unverified customer testimonials', async ({ page }) => {
+  test('homepage keeps the testimonial section and clear task journey', async ({ page }) => {
     await page.goto('/')
+    await expect(page.getByRole('heading', { name: /what people say/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /a clear task journey/i })).toBeVisible()
-    await expect(page.getByText(/what people say/i)).toHaveCount(0)
-    await expect(page.getByText(/Thabo M\.|Lerato K\.|Sipho N\./)).toHaveCount(0)
+    await expect(page.locator('.testimonials-section .testimonial-card')).toHaveCount(6)
   })
 
   test('public journey pages explain distinct creator, runner, and completion steps', async ({ page }) => {
