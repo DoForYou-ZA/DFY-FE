@@ -7,7 +7,7 @@ import BottomNav from '../shared/BottomNav'
 import AdminShell from './AdminShell'
 import UserDashboardShell from './UserDashboardShell'
 
-const PUBLIC_ROUTES = ['/', '/about', '/contact', '/terms', '/payments/success', '/payments/cancelled']
+const PUBLIC_ROUTES = ['/', '/about', '/contact', '/terms', '/how-it-works', '/for-creators', '/for-runners', '/faq', '/payments-and-completion', '/payments/success', '/payments/cancelled']
 const USER_WORKSPACE_ROUTES = ['/dashboard', '/tasks/post', '/tasks/browse', '/tasks/my-posted', '/tasks/action-required', '/tasks/my-active', '/tasks/my-completed', '/activity', '/notifications', '/messages', '/user/profile', '/user/bank-accounts']
 
 export default function Layout() {
@@ -19,15 +19,10 @@ export default function Layout() {
 
   if (isAdminRoute) return <div className="page-wrapper admin-page-wrapper"><AdminShell /></div>
 
-  // Admin accounts always use the dedicated operations workspace. Never expose
-  // creator/runner capabilities when an admin lands on a user dashboard route.
   if (isUserWorkspaceRoute && !loading && isAuthenticated() && user && isAdmin()) {
     return <Navigate to="/admin/dashboard" replace />
   }
 
-  // During credential submission, keep the public Header completely out of the tree.
-  // AuthContext keeps this flag active until the navigation to the authenticated
-  // workspace has been committed, eliminating the authenticated-header flash.
   if ((pathname === '/login' || pathname === '/register') && loginTransitioning) {
     return (
       <div className="page-wrapper user-dashboard-page-wrapper" aria-busy="true">
@@ -36,16 +31,10 @@ export default function Layout() {
     )
   }
 
-  // Once login has succeeded, never render the public login page/header again.
-  // Auth state is updated before Login navigates, so this guard closes the tiny
-  // render window where /login could otherwise show the authenticated Header.
   if ((pathname === '/login' || pathname === '/register') && !loading && isAuthenticated() && user) {
     return <Navigate to={isAdmin() ? '/admin/dashboard' : '/dashboard'} replace />
   }
 
-  // While auth is being restored after login/refresh, do not render the public header.
-  // Rendering Header here causes a brief Home/About/Browse/Contact flash before the
-  // authenticated workspace shell takes over.
   if (isUserWorkspaceRoute && loading) return <div className="page-wrapper user-dashboard-page-wrapper" aria-busy="true" />
 
   if (isUserWorkspaceRoute && !loading && isAuthenticated() && user) return (
