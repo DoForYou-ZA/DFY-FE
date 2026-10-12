@@ -11,7 +11,6 @@
     <meta property="og:site_name" content="DoForYou" />
     <meta property="og:title" content="DoForYou — Let's Get It Done" />
     <meta property="og:description" content="Post a task, connect with local runners, and get everyday jobs done with DoForYou — South Africa's task marketplace." />
-    <meta property="og:image" content="/DFY.png" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="DoForYou — Let's Get It Done" />
     <meta name="twitter:description" content="Post a task, connect with local runners, and get everyday jobs done with DoForYou — South Africa's task marketplace." />
@@ -21,8 +20,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
     <link rel="preload" as="image" href="/head.jpeg" fetchpriority="high" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+      .skip-link { position: fixed; z-index: 2000; top: .75rem; left: .75rem; padding: .75rem 1rem; transform: translateY(-180%); border-radius: .5rem; background: #111827; color: #fff; font: 600 1rem/1.4 Inter, sans-serif; }
+      .skip-link:focus { transform: translateY(0); outline: 3px solid #FF8A00; outline-offset: 3px; }
+      :focus-visible { outline: 3px solid #B45309; outline-offset: 3px; }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+    </style>
     <title>DoForYou — Let's Get It Done</title>
   </head>
   <body>
