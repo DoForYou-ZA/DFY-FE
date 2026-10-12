@@ -61,7 +61,10 @@ test.describe('public marketing experience', () => {
   test('FAQ search and topic filters narrow answers accessibly', async ({ page }) => {
     await page.goto('/faq')
     await page.getByRole('searchbox', { name: /search frequently asked questions/i }).fill('24-hour')
-    await expect(page.getByText(/creator has a 24-hour confirmation period/i)).toBeVisible()
+    const confirmationQuestion = page.locator('.premium-faq-item').filter({ hasText: /what happens after a runner marks a task complete/i })
+    await expect(confirmationQuestion).toBeVisible()
+    await confirmationQuestion.locator('summary').click()
+    await expect(confirmationQuestion.getByText(/creator has a 24-hour confirmation period/i)).toBeVisible()
     await page.getByRole('searchbox', { name: /search frequently asked questions/i }).fill('')
     await page.getByRole('button', { name: /runners/i }).click()
     await expect(page.getByRole('heading', { name: /^runners$/i })).toBeVisible()
