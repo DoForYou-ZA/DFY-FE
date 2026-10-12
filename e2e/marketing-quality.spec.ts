@@ -13,7 +13,7 @@ test.describe('public marketing experience', () => {
       /DoForYou/
     )
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/get it done/i)
-    await expect(page.getByRole('link', { name: /browse tasks/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: /browse tasks/i, exact: true }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: /post a task/i })).toBeVisible()
   })
 
