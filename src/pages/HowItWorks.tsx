@@ -1,23 +1,53 @@
 import { Link } from 'react-router-dom'
 import { usePageMetadata } from '../hooks/usePageMetadata'
+import taskImage from '../assets/images/image1.jpeg'
+import runnerImage from '../assets/images/image2.jpeg'
+import completionImage from '../assets/images/image3.jpeg'
 
 const steps = [
-  { number: '01', title: 'Describe the task', text: 'Explain the result you need, where it needs to happen, when you need it, and the budget you have in mind. Add practical instructions and any constraints so runners can judge whether it suits them.', tip: 'Be specific about what “finished” looks like.' },
-  { number: '02', title: 'Review and agree', text: 'Review available runner and task information, then make sure the scope, timing, budget, access arrangements, and important instructions are clear before work begins.', tip: 'Resolve questions before anyone commits.' },
-  { number: '03', title: 'Keep progress clear', text: 'Use the task status and available communication tools to share updates, ask questions early, and make sure both sides understand any change to the original plan.', tip: 'Keep important changes in the platform where possible.' },
-  { number: '04', title: 'Review completion', text: 'When the runner marks the task complete, the creator has 24 hours to confirm completion or raise a dispute. Check the task and payment records for the current status.', tip: 'The confirmation window is not a guarantee of instant payout.' },
+  { number: '01', title: 'Post the task', text: 'Describe the result you need, choose a realistic budget, and share the location, timing, and details that matter.', tip: 'Clear expectations help the right runner decide.' , image: taskImage, alt: 'Planning and describing a task' },
+  { number: '02', title: 'Agree on the details', text: 'Review the task information together. Clarify the scope, timing, access, budget, and any special requirements before work begins.', tip: 'Ask questions before committing.', image: runnerImage, alt: 'A person preparing to complete a task' },
+  { number: '03', title: 'Keep each other updated', text: 'Use the task status and available communication tools to share progress and raise concerns early if anything changes.', tip: 'Keep important changes clear and documented.', image: completionImage, alt: 'Task work being reviewed' },
+  { number: '04', title: 'Review completion', text: 'When the runner marks the task complete, the creator has 24 hours to confirm completion or raise a dispute through the platform process.', tip: 'The confirmation window is not a promise of instant payout.', image: completionImage, alt: 'Reviewing a completed task' },
 ]
 
 export default function HowItWorks() {
-  usePageMetadata('How DoForYou Works | Post Tasks and Find Local Runners', 'Learn how to post a task, agree on the details, work with a local runner, and review completion on DoForYou.')
-  return <div className="marketing-page">
-    <header className="page-header"><div className="container"><h1>How DoForYou works</h1><p>One clear journey from a task you need done to a result you can review.</p></div></header>
-    <div className="container" style={{ maxWidth: 1040, paddingTop: '2.5rem', paddingBottom: '4rem' }}>
-      <section className="section-card"><span className="marketing-kicker">ONE MARKETPLACE, TWO SIDES</span><h2>For task creators and runners</h2><p style={{ color: 'var(--text-muted)', lineHeight: 1.85 }}>DoForYou connects people who need everyday tasks completed with people willing to take them on. A good task journey starts with clear expectations, continues with communication, and ends with a chance to review the result.</p><div className="marketing-two-column"><div><h3>Creating a task?</h3><p>Describe the outcome, set a fair budget, and make the timing and location clear.</p><Link to="/for-creators">Guide for creators →</Link></div><div><h3>Taking on a task?</h3><p>Read the requirements carefully, ask questions, and accept only work you can safely complete.</p><Link to="/for-runners">Guide for runners →</Link></div></div></section>
-      <div className="marketing-step-list">
-        {steps.map(step => <article key={step.number} className="section-card marketing-step"><div className="marketing-step-number" aria-hidden="true">{step.number}</div><div><h2>{step.title}</h2><p style={{ color: 'var(--text-muted)', lineHeight: 1.85 }}>{step.text}</p><p className="marketing-tip"><strong>Helpful tip</strong> {step.tip}</p></div></article>)}
+  usePageMetadata('How DoForYou Works | Post Tasks and Find Local Runners', 'See how DoForYou connects task creators and runners, from a clear task brief through completion review.')
+  return <div className="marketing-page premium-marketing-page how-page">
+    <header className="premium-page-hero how-hero">
+      <div className="container premium-hero-grid">
+        <div className="premium-hero-copy">
+          <span className="marketing-kicker">A BETTER WAY TO GET THINGS DONE</span>
+          <h1>From “I need a hand” to <em>“all sorted.”</em></h1>
+          <p>DoForYou brings task creators and local runners together around clear expectations, visible progress, and a proper chance to review the result.</p>
+          <div className="marketing-actions"><Link className="btn btn-primary btn-lg" to="/tasks/post">Post a task <span aria-hidden="true">→</span></Link><Link className="btn btn-secondary btn-lg" to="/tasks/browse">Explore tasks</Link></div>
+          <div className="premium-trust-line"><span><i aria-hidden="true">✓</i> Clear task details</span><span><i aria-hidden="true">✓</i> Shared expectations</span><span><i aria-hidden="true">✓</i> 24-hour review window</span></div>
+        </div>
+        <div className="premium-hero-visual">
+          <img className="premium-hero-photo" src={taskImage} alt="A person getting everyday work organised" />
+          <div className="floating-info-card"><span className="floating-info-icon">✓</span><div><strong>A clear next step</strong><span>Know what happens next in the task journey.</span></div></div>
+          <div className="hero-image-caption"><span className="hero-caption-dot" /> Made for everyday tasks in South Africa</div>
+        </div>
       </div>
-      <section className="section-card marketing-final-cta"><span className="marketing-kicker">READY WHEN YOU ARE</span><h2>Take the next step</h2><p style={{ color: 'var(--text-muted)', lineHeight: 1.85 }}>Explore open tasks or create an account to start posting work of your own.</p><div className="marketing-actions"><Link className="btn btn-primary" to="/register">Create an account</Link><Link className="btn btn-secondary" to="/tasks/browse">Browse tasks</Link></div></section>
-    </div>
+    </header>
+    <section className="premium-section process-overview">
+      <div className="container">
+        <div className="premium-section-heading"><span className="marketing-kicker">THE TASK JOURNEY</span><h2>Four steps. Fewer surprises.</h2><p>Simple doesn't have to mean vague. Each stage helps both sides know what to expect.</p></div>
+        <div className="premium-process-grid">{steps.map(step => <article key={step.number} className="premium-process-card"><div className="process-card-top"><span className="premium-step-number">{step.number}</span><span className="process-arrow" aria-hidden="true">↗</span></div><img src={step.image} alt={step.alt} loading="lazy" /><h3>{step.title}</h3><p>{step.text}</p><div className="process-card-tip"><span aria-hidden="true">✦</span>{step.tip}</div></article>)}</div>
+      </div>
+    </section>
+    <section className="premium-section role-section">
+      <div className="container role-panel">
+        <div className="role-panel-heading"><span className="marketing-kicker">TWO SIDES, ONE CLEAR AGREEMENT</span><h2>Here for the people who need a hand—and the people ready to lend one.</h2><p>Whether you are getting something off your list or looking for tasks that fit your time, start with the right guide.</p></div>
+        <div className="role-choice-grid">
+          <article className="role-choice-card creator-choice"><span className="role-choice-icon" aria-hidden="true">↗</span><span className="role-choice-label">FOR TASK CREATORS</span><h3>Get the help you need</h3><p>Write a clear brief, set your budget, agree on the details, and review the completed task.</p><Link to="/for-creators">How to post a great task <span aria-hidden="true">→</span></Link></article>
+          <article className="role-choice-card runner-choice"><span className="role-choice-icon" aria-hidden="true">✦</span><span className="role-choice-label">FOR RUNNERS</span><h3>Make your time count</h3><p>Find suitable tasks, clarify expectations before accepting, and keep the creator updated.</p><Link to="/for-runners">Explore the runner guide <span aria-hidden="true">→</span></Link></article>
+        </div>
+      </div>
+    </section>
+    <section className="premium-section confirmation-section">
+      <div className="container confirmation-grid"><div className="confirmation-visual"><img src={completionImage} alt="A task result ready to be reviewed" loading="lazy" /><div className="confirmation-badge"><strong>24 hours</strong><span>Creator confirmation window</span></div></div><div className="confirmation-copy"><span className="marketing-kicker">COMPLETION SHOULD BE CLEAR</span><h2>Finish the task. Review the result. Know where things stand.</h2><p>Once a runner marks a task complete, the creator has 24 hours to confirm completion or raise a dispute. If neither happens, the platform follows its configured release process.</p><p className="premium-muted-copy">Payment processing and payout status can depend on the payment provider and the transaction's recorded status. Check the platform for the latest information.</p><Link className="text-link-arrow" to="/faq">Understand completion and payments <span aria-hidden="true">→</span></Link></div></div>
+    </section>
+    <section className="premium-bottom-cta"><div className="container premium-bottom-cta-inner"><div><span className="marketing-kicker">READY WHEN YOU ARE</span><h2>Let's get that task moving.</h2><p>Start with a clear brief or explore tasks that need a capable runner.</p></div><div className="marketing-actions"><Link className="btn btn-primary btn-lg" to="/tasks/post">Post a task</Link><Link className="btn btn-dark-outline btn-lg" to="/tasks/browse">Browse tasks</Link></div></div></section>
   </div>
 }
