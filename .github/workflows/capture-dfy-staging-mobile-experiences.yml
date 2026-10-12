@@ -48,8 +48,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$EXPO_PUBLIC_DFY_API_URL" == "https://dfy-be-staging.onrender.com/api/v1" ]] || {
-            echo "Refusing to run outside the DFY staging API"; exit 1;
+          [[ "$EXPO_PUBLIC_DFY_API_URL" == "http://127.0.0.1:8081/api/v1" ]] || {
+            echo "Refusing to run without the local staging-only API proxy"; exit 1;
           }
           [[ -n "$DFY_CREATOR_EMAIL" && -n "$DFY_CREATOR_PASSWORD" ]] || {
             echo "DFY_CREATOR_EMAIL and DFY_CREATOR_PASSWORD must be configured in DFY-FE Actions secrets"; exit 1;
