@@ -35,7 +35,6 @@ function requireEnv(name: string, value?: string): string {
 
 async function apiLogin(api: APIRequestContext, email: string, password: string): Promise<string> {
   const res  = await api.post(`${API}/auth/login`, { data: { email, password } })
-  expect(res.ok(), `Login failed for ${email}: ${res.status()} ${await res.text()}`).toBeTruthy()
   const body = await res.json()
   expect(
     res.ok() && body.success !== false,
