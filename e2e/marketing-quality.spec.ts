@@ -14,7 +14,7 @@ test.describe('public marketing experience', () => {
     )
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/get it done/i)
     await expect(page.getByRole('link', { name: /browse tasks/i, exact: true }).first()).toBeVisible()
-    await expect(page.getByRole('button', { name: /post a task/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Post a Task', exact: true })).toBeVisible()
   })
 
   test('skip navigation reaches the main content landmark', async ({ page }) => {

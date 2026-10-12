@@ -1732,3 +1732,51 @@ html, body, #root {
     min-width: 0;
   }
 }
+
+
+/* Public marketing pages — shared visual system */
+.marketing-page{min-height:60vh;padding-bottom:clamp(2.5rem,6vw,5rem);background:#F8FAFC}
+.page-header{position:relative;isolation:isolate;overflow:hidden;margin:0 0 clamp(1.75rem,4vw,3rem);padding:clamp(3.5rem,7vw,6rem) 0;color:#fff;background:#1F2937}
+.page-header::after{content:"";position:absolute;z-index:-1;width:280px;height:280px;right:5%;top:-145px;border:1px solid rgba(255,138,0,.55);border-radius:50%;box-shadow:0 0 0 30px rgba(255,138,0,.06),0 0 0 60px rgba(255,138,0,.035);pointer-events:none}
+.page-header .container{position:relative;z-index:1}
+.page-header h1{max-width:900px;margin:0 0 .9rem;color:#fff;font-size:clamp(2.25rem,5.2vw,3.75rem);font-weight:850;letter-spacing:-.055em;line-height:1.05;text-wrap:balance}
+.page-header p{max-width:760px;margin:0;color:#E5E7EB;font-size:clamp(1rem,1.7vw,1.2rem);line-height:1.8}
+.marketing-page>.container{width:min(100% - 2rem,1000px);padding-top:0!important}
+.marketing-page .section-card{position:relative;margin:0 0 1rem;padding:clamp(1.4rem,3vw,2.2rem);border:1px solid #E5E7EB;border-radius:18px;background:#fff;box-shadow:0 8px 26px rgba(31,41,55,.045)}
+.marketing-page .section-card h2{margin:0 0 .8rem;color:#1F2937;font-size:clamp(1.25rem,2.6vw,1.75rem);font-weight:800;letter-spacing:-.035em;text-wrap:balance}
+.marketing-page .section-card h3{color:#1F2937;font-size:1.05rem;font-weight:800}
+.marketing-page .section-card p{margin-bottom:0}
+.marketing-page .section-card .btn{min-height:46px;border-radius:9px}
+.marketing-page details.section-card{transition:border-color .2s ease,box-shadow .2s ease}
+.marketing-page details.section-card[open]{border-color:rgba(255,138,0,.55);box-shadow:0 12px 30px rgba(31,41,55,.07)}
+.marketing-page details.section-card summary{display:flex;align-items:flex-start;gap:1rem;list-style:none;color:#1F2937;font-size:1rem}
+.marketing-page details.section-card summary::-webkit-details-marker{display:none}
+.marketing-page details.section-card summary::after{content:"+";display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;margin-left:auto;border-radius:50%;color:#1F2937;background:#FFF0DE;font-size:1.15rem}
+.marketing-page details.section-card[open] summary::after{content:"−";background:#FF8A00}
+.marketing-page a:focus-visible,.marketing-page summary:focus-visible{outline:3px solid #FF8A00;outline-offset:4px;border-radius:4px}
+@media(max-width:640px){.page-header{padding:3.25rem 0}.page-header h1{font-size:clamp(2rem,10vw,2.7rem)}.marketing-page>.container{width:min(100% - 1.5rem,1000px)}.marketing-page .section-card{border-radius:14px}}
+@media(prefers-reduced-motion:reduce){.marketing-page *{scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+
+/* Public marketing pages — shared visual system */
+.marketing-page{min-height:60vh;padding-bottom:clamp(2.5rem,6vw,5rem);background:#F8FAFC}
+.page-header{position:relative;isolation:isolate;overflow:hidden;margin:0 0 clamp(1.75rem,4vw,3rem);padding:clamp(3.5rem,7vw,6rem) 0;color:#fff;background:#1F2937}
+.page-header::after{content:"";position:absolute;z-index:-1;width:280px;height:280px;right:5%;top:-145px;border:1px solid rgba(255,138,0,.55);border-radius:50%;box-shadow:0 0 0 30px rgba(255,138,0,.06),0 0 0 60px rgba(255,138,0,.035);pointer-events:none}
+.page-header .container{position:relative;z-index:1}
+.page-header h1{max-width:900px;margin:0 0 .9rem;color:#fff;font-size:clamp(2.25rem,5.2vw,3.75rem);font-weight:850;letter-spacing:-.055em;line-height:1.05;text-wrap:balance}
+.page-header p{max-width:760px;margin:0;color:#E5E7EB;font-size:clamp(1rem,1.7vw,1.2rem);line-height:1.8}
+.marketing-page>.container{width:min(100% - 2rem,1000px);padding-top:0!important}
+.marketing-page .section-card{position:relative;margin:0 0 1rem;padding:clamp(1.4rem,3vw,2.2rem);border:1px solid #E5E7EB;border-radius:18px;background:#fff;box-shadow:0 8px 26px rgba(31,41,55,.045)}
+.marketing-page .section-card h2{margin:0 0 .8rem;color:#1F2937;font-size:clamp(1.25rem,2.6vw,1.75rem);font-weight:800;letter-spacing:-.035em;text-wrap:balance}
+.marketing-page .section-card h3{color:#1F2937;font-size:1.05rem;font-weight:800}
+.marketing-page .section-card p{margin-bottom:0}
+.marketing-page .section-card .btn{min-height:46px;border-radius:9px}
+.marketing-page details.section-card{transition:border-color .2s ease,box-shadow .2s ease}
+.marketing-page details.section-card[open]{border-color:rgba(255,138,0,.55);box-shadow:0 12px 30px rgba(31,41,55,.07)}
+.marketing-page details.section-card summary{display:flex;align-items:flex-start;gap:1rem;list-style:none;color:#1F2937;font-size:1rem}
+.marketing-page details.section-card summary::-webkit-details-marker{display:none}
+.marketing-page details.section-card summary::after{content:"+";display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;margin-left:auto;border-radius:50%;color:#1F2937;background:#FFF0DE;font-size:1.15rem}
+.marketing-page details.section-card[open] summary::after{content:"−";background:#FF8A00}
+.marketing-page a:focus-visible,.marketing-page summary:focus-visible{outline:3px solid #FF8A00;outline-offset:4px;border-radius:4px}
+@media(max-width:640px){.page-header{padding:3.25rem 0}.page-header h1{font-size:clamp(2rem,10vw,2.7rem)}.marketing-page>.container{width:min(100% - 1.5rem,1000px)}.marketing-page .section-card{border-radius:14px}}
+@media(prefers-reduced-motion:reduce){.marketing-page *{scroll-behavior:auto!important;transition-duration:.01ms!important}}
