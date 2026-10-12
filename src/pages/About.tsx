@@ -1,31 +1,34 @@
+import { Link } from 'react-router-dom'
 import { usePageMetadata } from '../hooks/usePageMetadata'
 
 export default function About() {
-  usePageMetadata('About DoForYou', 'Learn how DoForYou connects people across South Africa to post everyday tasks, find local runners, and earn through completing tasks.')
+  usePageMetadata('About DoForYou', 'Learn how DoForYou connects people across South Africa to post everyday tasks, find local runners, and create local earning opportunities.')
   return (
     <div style={{ paddingBottom: '3rem' }}>
-      <div className="page-header"><div className="container"><h1>About DoForYou</h1><p>Connecting South Africans through meaningful tasks</p></div></div>
-      <div className="container" style={{ maxWidth: 800, paddingTop: '2rem' }}>
-        <div className="section-card">
-          <h2 style={{ marginBottom: '1rem' }}>Our Mission</h2>
-          <p style={{ color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: '1rem' }}>DoForYou is a freelance platform that allows ordinary South Africans to perform tasks for each other, providing an opportunity to earn extra cash while helping their community.</p>
-          <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>Whether you need groceries picked up, a package delivered, or help with household tasks — DoForYou connects you with trusted people in your area who can get it done.</p>
-        </div>
-        <div className="section-card">
-          <h2 style={{ marginBottom: '1rem' }}>How It Works</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {[
-              { icon: 'fa-plus-circle', title: 'Post a Task', desc: 'Describe what you need done, set your budget, and post your task.' },
-              { icon: 'fa-search', title: 'Find a Runner', desc: 'A qualified runner in your area accepts your task.' },
-              { icon: 'fa-check-circle', title: 'Get It Done', desc: 'The runner completes the task. Confirm and release payment securely.' },
-            ].map((s, i) => (
-              <div key={i} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--primary-gradient)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><i className={`fas ${s.icon}`} /></div>
-                <div><h4 style={{ marginBottom: '0.25rem' }}>{s.title}</h4><p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{s.desc}</p></div>
-              </div>
-            ))}
+      <div className="page-header"><div className="container"><h1>About DoForYou</h1><p>A practical way for people to help people get things done.</p></div></div>
+      <div className="container" style={{ maxWidth: 900, paddingTop: '2rem' }}>
+        <section className="section-card">
+          <h2 style={{ marginBottom: '1rem' }}>A marketplace built around everyday tasks</h2>
+          <p style={{ color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: '1rem' }}>DoForYou brings together people who need a task done and people who are willing and able to do it. A creator can describe a task and budget; a runner can review the details and decide whether it is right for them.</p>
+          <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>Tasks may include errands, shopping assistance, household help, and other everyday jobs that are suitable for the platform. The task details should always make the expected result, timing, location, and budget clear.</p>
+        </section>
+        <section className="section-card" style={{ marginTop: '1rem' }}>
+          <h2 style={{ marginBottom: '1rem' }}>What we want the experience to feel like</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1rem' }}>
+            <div><h3 style={{ marginBottom: '.5rem' }}>Clear expectations</h3><p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>People should understand the task, budget, timing, and next step before they commit.</p></div>
+            <div><h3 style={{ marginBottom: '.5rem' }}>Visible progress</h3><p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>Task status and communication help creators and runners stay aligned throughout the task.</p></div>
+            <div><h3 style={{ marginBottom: '.5rem' }}>A clear review step</h3><p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>After completion is marked, the creator has 24 hours to confirm the result or raise a dispute.</p></div>
           </div>
-        </div>
+        </section>
+        <section className="section-card" style={{ marginTop: '1rem' }}>
+          <h2 style={{ marginBottom: '.75rem' }}>Find your next step</h2>
+          <p style={{ color: 'var(--text-muted)', lineHeight: 1.8 }}>Need a hand with a task, or looking for tasks you can complete? Start with the journey that fits you.</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.75rem', marginTop: '1rem' }}>
+            <Link className="btn btn-primary" to="/for-creators">I need a task done</Link>
+            <Link className="btn btn-secondary" to="/for-runners">I want to be a runner</Link>
+            <Link className="btn btn-secondary" to="/contact">Contact DoForYou</Link>
+          </div>
+        </section>
       </div>
     </div>
   )
