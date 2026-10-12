@@ -4,12 +4,16 @@ import { tasksApi } from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import type { Task } from '../../types'
 import Pagination from '../../components/Pagination'
+import { usePageMetadata } from '../../hooks/usePageMetadata'
 import './BrowseErrands.css'
+
+const browseHeroImage = new URL('../../assets/images/image1.jpeg', import.meta.url).href
 
 const CATEGORIES = ['Grocery Shopping', 'Delivery', 'Cleaning', 'Gardening', 'Moving', 'Repairs', 'Tutoring', 'Pet Care', 'Cooking', 'Other']
 const PAGE_SIZE = 10
 
 export default function BrowseErrands() {
+  usePageMetadata('Find Tasks Near You | DoForYou', 'Explore local tasks on DoForYou, find work that fits your skills and schedule, and earn through verified bank payouts.')
   const { isAuthenticated, canAcceptTasks, isProfileIncomplete, user } = useAuth()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -135,7 +139,20 @@ export default function BrowseErrands() {
 
   return (
     <div className="browse-page">
-      <div className="page-header"><div className="container"><h1><i className="fas fa-search" /> Find a Task</h1><p>Choose a task that fits your skills and schedule. Completed work is paid directly to your verified bank account.</p></div></div>
+      <header className="browse-hero premium-page-hero">
+        <div className="container browse-hero-grid">
+          <div className="browse-hero-copy">
+            <span className="marketing-kicker">FIND YOUR NEXT OPPORTUNITY</span>
+            <h1>Find a task. <em>Make your time count.</em></h1>
+            <p>Explore local tasks that fit your skills and schedule. Complete the work, have it confirmed, and receive payouts directly to your verified bank account.</p>
+            <div className="browse-hero-trust"><span><i aria-hidden="true">✓</i> Tasks for everyday skills</span><span><i aria-hidden="true">✓</i> Protected task payments</span><span><i aria-hidden="true">✓</i> Direct bank payout</span></div>
+          </div>
+          <div className="browse-hero-visual">
+            <img src={browseHeroImage} alt="A person organising everyday tasks and getting work done" />
+            <div className="browse-hero-image-note"><span className="hero-caption-dot" /> Local opportunities, one task at a time</div>
+          </div>
+        </div>
+      </header>
 
       <div className="container browse-content">
         <div className="browse-toolbar"><div className="browse-toolbar-stat"><strong>{totalItems}</strong><span>Available Tasks</span></div><button className="btn btn-secondary btn-sm" onClick={() => load(page, search, category)} disabled={loading}><i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`} /> {loading ? 'Refreshing...' : 'Refresh'}</button></div>

@@ -7,12 +7,12 @@ export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="site-footer">
+    <footer className="site-footer" aria-label="DoForYou site footer">
       <div className="container footer-cta"><div className="footer-cta-copy"><span className="footer-eyebrow">YOUR NEXT STEP STARTS HERE</span><h2>Got a task in mind?</h2><p>Get the help you need, or find a task that puts your time and skills to work.</p></div><div className="footer-cta-actions"><button type="button" className="btn footer-cta-primary" onClick={handlePostErrand}>Post a task <span aria-hidden="true">↗</span></button><Link to="/tasks/browse" className="btn footer-cta-secondary">Explore tasks <span aria-hidden="true">→</span></Link></div></div>
       <div className="container footer-inner">
         <div className="footer-brand">
           <Link to="/" className="footer-logo">
-            <img src="/DFY.png" alt="" className="footer-logo-image" />
+            <img src="/DFY.png" alt="DoForYou logo" className="footer-logo-image" loading="lazy" />
             <span className="brand-text">DoForYou</span><span className="dot"><b>.</b></span>
           </Link>
           <p>A South African task marketplace for getting everyday jobs done and creating local earning opportunities.</p>
