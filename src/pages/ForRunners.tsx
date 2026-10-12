@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { usePageMetadata } from '../hooks/usePageMetadata'
-import runnerImage from '../assets/images/image2.jpeg'
-import taskImage from '../assets/images/image1.jpeg'
-import completionImage from '../assets/images/image3.jpeg'
+const runnerImage = new URL('../assets/images/image2.jpeg', import.meta.url).href
+const taskImage = new URL('../assets/images/image1.jpeg', import.meta.url).href
+const completionImage = new URL('../assets/images/image3.jpeg', import.meta.url).href
 
 const runnerSteps = [
   { number: '01', title: 'Choose tasks carefully', text: 'Read the location, timing, budget, expected outcome, and instructions. Accept work you understand and can complete safely.', icon: '⌖' },
