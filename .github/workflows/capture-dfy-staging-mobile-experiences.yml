@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      EXPO_PUBLIC_DFY_API_URL: https://dfy-be-staging.onrender.com/api/v1
+      EXPO_PUBLIC_DFY_API_URL: http://127.0.0.1:8081/api/v1
       EXPO_PUBLIC_DFY_SIGNALR_URL: https://dfy-be-staging.onrender.com
       DFY_CREATOR_EMAIL: ${{ secrets.DFY_CREATOR_EMAIL }}
       DFY_CREATOR_PASSWORD: ${{ secrets.DFY_CREATOR_PASSWORD }}
@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: DoForYou-ZA/dfy-mobile
-          ref: chore/playwright-mobile-marketing-screenshots
+          ref: fix/marketing-screenshots-api-proxy
           path: dfy-mobile
           token: ${{ secrets.DFY_MOBILE_READ_TOKEN }}
 
