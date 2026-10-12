@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePageMetadata } from '../hooks/usePageMetadata'
 import { supportApi } from '../api'
 
 const CONTACT_METHODS = [
@@ -8,6 +9,7 @@ const CONTACT_METHODS = [
 ]
 
 export default function Contact() {
+  usePageMetadata('Contact DoForYou', 'Contact the DoForYou support team for help with your task marketplace account or general questions.')
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
