@@ -2,6 +2,10 @@ name: Capture DFY staging mobile experiences
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/capture-dfy-staging-mobile-experiences.yml
 
 permissions:
   contents: read
