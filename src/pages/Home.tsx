@@ -66,8 +66,8 @@ export default function Home() {
               <h1 id="home-heading">Let’s get it done<span className="dot">.</span></h1>
               <p>Big to-do list? Not enough hours? Find practical local help for everyday tasks — or put your time and skills to work as a runner.</p>
               <div className="hero-actions">
-                <Link to="/tasks/browse" className="btn btn-secondary btn-lg">Explore tasks <span aria-hidden="true">→</span></Link>
-                <button onClick={handlePostErrand} className="btn btn-primary btn-lg">Post a task <span aria-hidden="true">↗</span></button>
+                <Link to="/tasks/browse" className="btn btn-secondary btn-lg">Browse Tasks <span aria-hidden="true">→</span></Link>
+                <button onClick={handlePostErrand} className="btn btn-primary btn-lg">Post a Task <span aria-hidden="true">↗</span></button>
               </div>
               <div className="hero-trust-note"><span className="hero-trust-mark" aria-hidden="true"><i className="fas fa-check" /></span><span>Clear task details. Local people. Progress you can follow.</span></div>
               {stats && (
