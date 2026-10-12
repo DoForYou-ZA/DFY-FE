@@ -1,4 +1,7 @@
+import { usePageMetadata } from '../hooks/usePageMetadata'
+
 export default function Terms() {
+  usePageMetadata('Terms and Conditions', 'Read the DoForYou platform terms and conditions for task creators and runners.')
   return (
     <div style={{ paddingBottom: '3rem' }}>
       <div className="page-header"><div className="container"><h1>Terms & Conditions</h1></div></div>
