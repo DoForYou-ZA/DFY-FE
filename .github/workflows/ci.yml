@@ -51,7 +51,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        uses: microsoft/playwright-github-action@v1
 
       - name: Run staging E2E
         run: npm test -- e2e/staging.spec.ts e2e/creator-runner-24h-confirmation.spec.ts e2e/full-dfy-staging.spec.ts e2e/runner-creator-lifecycle.spec.ts
@@ -65,7 +65,6 @@ jobs:
             playwright-report/
             test-results/
           if-no-files-found: ignore
-
 
   mobile-e2e:
     runs-on: ubuntu-latest
@@ -111,5 +110,5 @@ jobs:
           cat /tmp/dfy-preview.log
           exit 1
 
-      - name: Run mobile responsiveness suite
-        run: npm test -- e2e/mobile-responsive.spec.ts
+      - name: Run mobile and marketing quality suite
+        run: npm test -- e2e/mobile-responsive.spec.ts e2e/marketing-quality.spec.ts
