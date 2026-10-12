@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { usePageMetadata } from '../hooks/usePageMetadata'
-import taskImage from '../assets/images/image1.jpeg'
-import runnerImage from '../assets/images/image2.jpeg'
-import completionImage from '../assets/images/image3.jpeg'
+const taskImage = new URL('../assets/images/image1.jpeg', import.meta.url).href
+const runnerImage = new URL('../assets/images/image2.jpeg', import.meta.url).href
+const completionImage = new URL('../assets/images/image3.jpeg', import.meta.url).href
 
 const steps = [
   { number: '01', title: 'Post the task', text: 'Describe the result you need, choose a realistic budget, and share the location, timing, and details that matter.', tip: 'Clear expectations help the right runner decide.' , image: taskImage, alt: 'Planning and describing a task' },
@@ -20,7 +20,7 @@ export default function HowItWorks() {
           <span className="marketing-kicker">A BETTER WAY TO GET THINGS DONE</span>
           <h1>From “I need a hand” to <em>“all sorted.”</em></h1>
           <p>DoForYou brings task creators and local runners together around clear expectations, visible progress, and a proper chance to review the result.</p>
-          <div className="marketing-actions"><Link className="btn btn-primary btn-lg" to="/tasks/post">Post a task <span aria-hidden="true">→</span></Link><Link className="btn btn-secondary btn-lg" to="/tasks/browse">Explore tasks</Link></div>
+          <div className="marketing-actions"><Link className="btn btn-primary btn-lg" to="/register">Post a task <span aria-hidden="true">→</span></Link><Link className="btn btn-secondary btn-lg" to="/tasks/browse">Explore tasks</Link></div>
           <div className="premium-trust-line"><span><i aria-hidden="true">✓</i> Clear task details</span><span><i aria-hidden="true">✓</i> Shared expectations</span><span><i aria-hidden="true">✓</i> 24-hour review window</span></div>
         </div>
         <div className="premium-hero-visual">
@@ -48,6 +48,6 @@ export default function HowItWorks() {
     <section className="premium-section confirmation-section">
       <div className="container confirmation-grid"><div className="confirmation-visual"><img src={completionImage} alt="A task result ready to be reviewed" loading="lazy" /><div className="confirmation-badge"><strong>24 hours</strong><span>Creator confirmation window</span></div></div><div className="confirmation-copy"><span className="marketing-kicker">COMPLETION SHOULD BE CLEAR</span><h2>Finish the task. Review the result. Know where things stand.</h2><p>Once a runner marks a task complete, the creator has 24 hours to confirm completion or raise a dispute. If neither happens, the platform follows its configured release process.</p><p className="premium-muted-copy">Payment processing and payout status can depend on the payment provider and the transaction's recorded status. Check the platform for the latest information.</p><Link className="text-link-arrow" to="/faq">Understand completion and payments <span aria-hidden="true">→</span></Link></div></div>
     </section>
-    <section className="premium-bottom-cta"><div className="container premium-bottom-cta-inner"><div><span className="marketing-kicker">READY WHEN YOU ARE</span><h2>Let's get that task moving.</h2><p>Start with a clear brief or explore tasks that need a capable runner.</p></div><div className="marketing-actions"><Link className="btn btn-primary btn-lg" to="/tasks/post">Post a task</Link><Link className="btn btn-dark-outline btn-lg" to="/tasks/browse">Browse tasks</Link></div></div></section>
+    <section className="premium-bottom-cta"><div className="container premium-bottom-cta-inner"><div><span className="marketing-kicker">READY WHEN YOU ARE</span><h2>Let's get that task moving.</h2><p>Start with a clear brief or explore tasks that need a capable runner.</p></div><div className="marketing-actions"><Link className="btn btn-primary btn-lg" to="/register">Post a task</Link><Link className="btn btn-dark-outline btn-lg" to="/tasks/browse">Browse tasks</Link></div></div></section>
   </div>
 }
