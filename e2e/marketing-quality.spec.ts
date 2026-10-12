@@ -56,7 +56,7 @@ test.describe('public marketing experience', () => {
       { path: '/for-creators', heading: /your to-do list deserves a team effort/i },
       { path: '/for-runners', heading: /your time has value\. put it to work/i },
       { path: '/faq', heading: /good questions deserve clear answers/i },
-      { path: '/payments-and-completion', heading: /task completion and payment status/i },
+      { path: '/payments-and-completion', heading: /clear work\. a fair review\. know where you stand\./i },
     ]
 
     for (const route of routes) {
