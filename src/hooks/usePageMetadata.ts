@@ -6,7 +6,7 @@ import { useEffect } from 'react'
  */
 export function usePageMetadata(title: string, description: string) {
   useEffect(() => {
-    const fullTitle = title === 'DoForYou' ? title : `${title} | DoForYou`
+    const fullTitle = title.includes('DoForYou') ? title : `${title} | DoForYou`
     document.title = fullTitle
 
     const setMeta = (selector: string, attribute: string, value: string) => {
