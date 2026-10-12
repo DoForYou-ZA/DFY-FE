@@ -51,7 +51,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browser
-        uses: microsoft/playwright-github-action@v1
+        run: npx playwright install --with-deps chromium
 
       - name: Run staging E2E
         run: npm test -- e2e/staging.spec.ts e2e/creator-runner-24h-confirmation.spec.ts e2e/full-dfy-staging.spec.ts e2e/runner-creator-lifecycle.spec.ts
