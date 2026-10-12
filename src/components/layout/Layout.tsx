@@ -57,7 +57,7 @@ export default function Layout() {
   return (
     <div className="page-wrapper">
       <Header />
-      <main className="main-content"><Outlet /></main>
+      <main id="main-content" className="main-content" tabIndex={-1}><Outlet /></main>
       {showFooter && <Footer />}
       <BottomNav />
       <BackButton />
