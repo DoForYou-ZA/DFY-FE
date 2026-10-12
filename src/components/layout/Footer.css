@@ -36,3 +36,7 @@
 @media(max-width:640px){.site-footer{padding-top:1.5rem}.footer-cta{width:calc(100% - 2rem);padding:1.5rem 1.25rem;margin-bottom:2.75rem;border-radius:18px;gap:1.35rem}.footer-eyebrow{font-size:.66rem;margin-bottom:.65rem}.footer-cta h2{margin-bottom:.65rem}.footer-cta p{font-size:.95rem;line-height:1.7}.footer-cta-actions{display:grid;width:100%;grid-template-columns:1fr;gap:.75rem}.footer-cta-actions .btn{width:100%;white-space:normal}.footer-inner{gap:2.5rem;padding-bottom:2.5rem}.footer-logo-image{height:50px;width:50px}.footer-links{grid-template-columns:repeat(2,minmax(0,1fr));gap:2rem 1.25rem}.footer-links>div:last-child{grid-column:1/-1}.footer-links ul{gap:.75rem}.footer-bottom-inner{flex-direction:column;text-align:center;gap:.5rem}.footer-bottom{padding-bottom:calc(64px + 1rem + env(safe-area-inset-bottom))}}
 @media(max-width:380px){.footer-links{grid-template-columns:1fr}.footer-links>div:last-child{grid-column:auto}}
 @media(prefers-reduced-motion:reduce){.site-footer *,.site-footer *::before,.site-footer *::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* Keep the footer call-to-action headline compact and on one line. */
+.footer-cta h2{font-size:clamp(1.45rem,2.5vw,2rem);line-height:1.15;letter-spacing:-.045em;white-space:nowrap}
+@media(max-width:380px){.footer-cta h2{font-size:1.35rem}}

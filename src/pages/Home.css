@@ -194,3 +194,9 @@
  .journey-card{align-items:flex-start}
 }
 @media(prefers-reduced-motion:reduce){.hero-photo-small,.hero-photo-main img,.feature-card img{transition:none!important}}
+
+
+/* Keep the homepage hero headline on a single line without overpowering the layout. */
+.hero-text h1{font-size:clamp(2.2rem,4.4vw,3.8rem);line-height:1.08;letter-spacing:-.055em;white-space:nowrap}
+@media(max-width:640px){.hero-text h1{font-size:clamp(1.8rem,8.5vw,3.1rem)}}
+@media(max-width:360px){.hero-text h1{font-size:1.7rem}}
