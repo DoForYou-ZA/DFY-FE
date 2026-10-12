@@ -56,12 +56,35 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
     const runnerLogin = await api.post(API_BASE_URL + '/auth/login', {
       data: { email: runnerEmail, password: runnerPassword },
     })
-    expect(runnerLogin.ok(), `Runner login failed: HTTP ${runnerLogin.status()} body=${await runnerLogin.text()}`).toBeTruthy()
     const runnerBody = await runnerLogin.json()
-    expect(runnerBody.success).toBeTruthy()
+    expect(
+      runnerLogin.ok() && runnerBody.success,
+      `Runner preflight authentication failed: HTTP ${runnerLogin.status()} response=${JSON.stringify(runnerBody)}. Check DFY_RUNNER_EMAIL/PASSWORD and confirm this account exists in the staging database.`,
+    ).toBeTruthy()
     const runnerToken = runnerBody.token || runnerBody.data?.token
-    expect(runnerToken).toBeTruthy()
+    expect(runnerToken, 'Runner login succeeded without returning a token.').toBeTruthy()
     await ensureRunnerBank(api, String(runnerToken))
+
+    // Authenticate creator and admin before any task is created.
+    const creatorPreflight = await api.post(API_BASE_URL + '/auth/login', {
+      data: { email: creatorEmail, password: creatorPassword },
+    })
+    const creatorPreflightBody = await creatorPreflight.json()
+    expect(
+      creatorPreflight.ok() && creatorPreflightBody.success,
+      `Creator preflight authentication failed: HTTP ${creatorPreflight.status()} response=${JSON.stringify(creatorPreflightBody)}. Check DFY_CREATOR_EMAIL/PASSWORD and the staging database.`,
+    ).toBeTruthy()
+
+    const adminLogin = await api.post(API_BASE_URL + '/auth/login', {
+      data: { email: adminEmail, password: adminPassword },
+    })
+    const adminBody = await adminLogin.json()
+    expect(
+      adminLogin.ok() && adminBody.success,
+      `Admin preflight authentication failed: HTTP ${adminLogin.status()} response=${JSON.stringify(adminBody)}. Check DFY_ADMIN_EMAIL/PASSWORD and the staging database.`,
+    ).toBeTruthy()
+    const adminToken = adminBody.token || adminBody.data?.token
+    expect(adminToken, 'Admin login succeeded without returning a token.').toBeTruthy()
 
     // 1. Creator creates a brand-new task through the real API.
     await login(page, creatorEmail, creatorPassword)
@@ -102,14 +125,6 @@ test('creator -> runner -> completion -> automatic 24h confirmation lifecycle', 
 
     // 2. Admin marks only this new task as paid/escrow-held. This replaces the
     // external Ozow payment for the E2E while exercising the real posted-task state.
-    const adminLogin = await api.post(API_BASE_URL + '/auth/login', {
-      data: { email: adminEmail, password: adminPassword },
-    })
-    expect(adminLogin.ok()).toBeTruthy()
-    const adminBody = await adminLogin.json()
-    expect(adminBody.success).toBeTruthy()
-    const adminToken = adminBody.token
-
     const verify = await api.patch(API_BASE_URL + '/admin/tasks/bulk-verify', {
       headers: { Authorization: 'Bearer ' + adminToken },
       data: {
