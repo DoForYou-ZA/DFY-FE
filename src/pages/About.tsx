@@ -1,4 +1,7 @@
+import { usePageMetadata } from '../hooks/usePageMetadata'
+
 export default function About() {
+  usePageMetadata('About DoForYou', 'Learn how DoForYou connects people across South Africa to post everyday tasks, find local runners, and earn through completing tasks.')
   return (
     <div style={{ paddingBottom: '3rem' }}>
       <div className="page-header"><div className="container"><h1>About DoForYou</h1><p>Connecting South Africans through meaningful tasks</p></div></div>
