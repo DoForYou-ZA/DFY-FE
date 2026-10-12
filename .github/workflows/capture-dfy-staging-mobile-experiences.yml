@@ -28,9 +28,7 @@ jobs:
           repository: DoForYou-ZA/dfy-mobile
           ref: chore/playwright-mobile-marketing-screenshots
           path: dfy-mobile
-          # Public repositories can be checked out without a cross-repository token.
-          # If dfy-mobile is private, add a narrowly scoped read-only token as a secret
-          # named DFY_MOBILE_READ_TOKEN and set token: ${{ secrets.DFY_MOBILE_READ_TOKEN }} here.
+          token: ${{ secrets.DFY_MOBILE_READ_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Validate staging target and existing-account secrets
         shell: bash
