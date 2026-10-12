@@ -8,6 +8,11 @@ import Home from './pages/Home'
 import About from './pages/About'
 import Contact from './pages/Contact'
 import Terms from './pages/Terms'
+import HowItWorks from './pages/HowItWorks'
+import ForCreators from './pages/ForCreators'
+import ForRunners from './pages/ForRunners'
+import FAQ from './pages/FAQ'
+import Payments from './pages/Payments'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import Dashboard from './pages/Dashboard'
@@ -42,6 +47,11 @@ export default function App() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/terms" element={<Terms />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/for-creators" element={<ForCreators />} />
+              <Route path="/for-runners" element={<ForRunners />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/payments-and-completion" element={<Payments />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/tasks/browse" element={<BrowseErrands />} />
@@ -65,10 +75,10 @@ export default function App() {
 
               <Route path="/admin/dashboard" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
               <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
-              <Route path="/admin/tasks" element={<RequireAdmin><AdminTasks /></RequireAdmin>} />
-              <Route path="/admin/payments" element={<RequireAdmin><AdminPayments /></RequireAdmin>} />
-              <Route path="/admin/disputes" element={<RequireAdmin><AdminDisputes /></RequireAdmin>} />
-              <Route path="/admin/audit-log" element={<RequireAdmin><AdminAuditLog /></RequireAdmin>} />
+              <Route path="/admin/tasks" element={<RequireAdmin><AdminTasks /></RequireAuth>} />
+              <Route path="/admin/payments" element={<RequireAdmin><AdminPayments /></RequireAuth>} />
+              <Route path="/admin/disputes" element={<RequireAdmin><AdminDisputes /></RequireAuth>} />
+              <Route path="/admin/audit-log" element={<RequireAdmin><AdminAuditLog /></RequireAuth>} />
 
               <Route path="/browse-errands" element={<Navigate to="/tasks/browse" replace />} />
               <Route path="/post-errand" element={<Navigate to="/tasks/post" replace />} />
