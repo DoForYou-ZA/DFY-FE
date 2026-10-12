@@ -43,9 +43,14 @@ async function apiLogin(api: APIRequestContext, email: string, password: string)
 }
 
 async function loginUi(page: Page, email: string, password: string) {
+  // Open the login route, clear any stale browser auth, then navigate afresh.
+  // Reloading here can race with the SPA's auth redirect and abort the frame.
   await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded', timeout: 60_000 })
-  await page.evaluate(() => localStorage.clear())
-  await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 })
+  await page.evaluate(() => {
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+  await page.goto(`${BASE}/login`, { waitUntil: 'domcontentloaded', timeout: 60_000 })
   await page.getByPlaceholder('Email Address').fill(email)
   await page.getByPlaceholder('Password').fill(password)
   await page.getByRole('button', { name: /sign in/i }).click()
