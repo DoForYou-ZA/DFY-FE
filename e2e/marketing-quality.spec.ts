@@ -34,6 +34,15 @@ test.describe('public marketing experience', () => {
     await expect(video).toHaveAttribute('preload', 'metadata')
   })
 
+  test('homepage hero and introduction create a clear, image-led first impression', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('.hero-visual')).toBeVisible()
+    await expect(page.locator('.hero-photo-main img')).toBeVisible()
+    await expect(page.getByText(/clear task details\. local people\. progress you can follow/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: /a simpler way to get things moving/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: /get to know the process/i })).toHaveAttribute('href', '/how-it-works')
+  })
+
   test('homepage keeps the testimonial section and clear task journey', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('heading', { name: /what people say/i })).toBeVisible()
