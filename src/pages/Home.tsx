@@ -28,7 +28,7 @@ const formatCount = (value: number) => {
 }
 
 export default function Home() {
-  usePageMetadata('DoForYou — Let’s Get It Done | South Africa Task Marketplace', 'Post a task, connect with local runners, and get everyday jobs done with DoForYou — South Africa's task marketplace.')
+  usePageMetadata('DoForYou — Let’s Get It Done | South Africa Task Marketplace', "Post a task, connect with local runners, and get everyday jobs done with DoForYou — South Africa's task marketplace.")
   const { handlePostErrand, ProfileIncompleteModal } = usePostErrand()
   const [stats, setStats] = useState<PublicStats | null>(null)
 
