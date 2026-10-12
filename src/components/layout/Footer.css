@@ -40,3 +40,32 @@
 /* Keep the footer call-to-action headline compact and on one line. */
 .footer-cta h2{font-size:clamp(1.45rem,2.5vw,2rem);line-height:1.15;letter-spacing:-.045em;white-space:nowrap}
 @media(max-width:380px){.footer-cta h2{font-size:1.35rem}}
+
+
+/* Refined public-site footer: generous spacing, clear hierarchy and consistent
+   surfaces that echo the premium marketing pages without changing DFY colours. */
+.site-footer{background:radial-gradient(ellipse at 88% 5%,rgba(255,138,0,.09),transparent 32%),#1F2937;padding-top:clamp(2.5rem,5vw,4.5rem)}
+.site-footer>.container,.footer-bottom-inner{width:min(100% - 2.5rem,1240px)}
+.footer-cta{max-width:1240px;min-height:190px;box-sizing:border-box;border:1px solid rgba(255,255,255,.16);box-shadow:0 22px 55px rgba(0,0,0,.2);overflow:hidden}
+.footer-cta-copy{position:relative;z-index:1}
+.footer-eyebrow{display:inline-flex;align-items:center;gap:.55rem;padding:.45rem .7rem;border:1px solid rgba(31,41,55,.2);border-radius:999px;background:rgba(255,255,255,.18);letter-spacing:.12em}
+.footer-cta h2{max-width:100%;font-size:clamp(1.65rem,2.7vw,2.2rem);line-height:1.12;letter-spacing:-.045em}
+.footer-cta p{max-width:520px;font-size:1rem;line-height:1.7}
+.footer-cta-actions{gap:.7rem}
+.footer-cta-actions .btn{min-height:52px;padding:.85rem 1.15rem;transition:transform .2s ease,box-shadow .2s ease,background .2s ease}
+.footer-cta-primary{box-shadow:0 5px 14px rgba(31,41,55,.18)}
+.footer-cta-primary:hover{box-shadow:0 9px 20px rgba(31,41,55,.22)}
+.footer-cta-secondary{background:rgba(255,255,255,.3)}
+.footer-inner{max-width:1240px;gap:clamp(2.5rem,5vw,5rem)}
+.footer-brand p{max-width:340px;font-size:.94rem;line-height:1.8}
+.footer-logo{gap:.35rem}
+.footer-logo-image{height:54px;width:54px;border:1px solid rgba(255,255,255,.7)}
+.footer-links{gap:clamp(1rem,2.4vw,2.25rem)}
+.footer-links h3{font-size:.78rem;letter-spacing:.1em;margin-bottom:1.1rem}
+.footer-links ul{gap:.75rem}
+.footer-links ul li a{font-size:.88rem;transition:color .18s ease,transform .18s ease}
+.footer-bottom{background:rgba(15,23,42,.2)}
+.footer-bottom-inner{max-width:1240px}
+@media(max-width:1000px){.footer-cta{min-height:0}.footer-cta-copy{max-width:680px}.footer-inner{gap:2.5rem}}
+@media(max-width:640px){.site-footer>.container,.footer-bottom-inner{width:calc(100% - 2rem)}.footer-cta{gap:1.2rem;padding:1.35rem 1.1rem}.footer-cta h2{white-space:normal;font-size:clamp(1.55rem,7vw,2rem)}.footer-cta p{font-size:.94rem}.footer-cta-actions .btn{min-height:48px}.footer-inner{gap:2.25rem}.footer-links{gap:1.75rem 1rem}.footer-logo-image{height:48px;width:48px}}
+@media(max-width:360px){.footer-eyebrow{font-size:.6rem;letter-spacing:.1em}.footer-cta h2{font-size:1.45rem}}
