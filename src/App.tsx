@@ -75,10 +75,10 @@ export default function App() {
 
               <Route path="/admin/dashboard" element={<RequireAdmin><AdminDashboard /></RequireAdmin>} />
               <Route path="/admin/users" element={<RequireAdmin><AdminUsers /></RequireAdmin>} />
-              <Route path="/admin/tasks" element={<RequireAdmin><AdminTasks /></RequireAuth>} />
-              <Route path="/admin/payments" element={<RequireAdmin><AdminPayments /></RequireAuth>} />
-              <Route path="/admin/disputes" element={<RequireAdmin><AdminDisputes /></RequireAuth>} />
-              <Route path="/admin/audit-log" element={<RequireAdmin><AdminAuditLog /></RequireAuth>} />
+              <Route path="/admin/tasks" element={<RequireAdmin><AdminTasks /></RequireAdmin>} />
+              <Route path="/admin/payments" element={<RequireAdmin><AdminPayments /></RequireAdmin>} />
+              <Route path="/admin/disputes" element={<RequireAdmin><AdminDisputes /></RequireAdmin>} />
+              <Route path="/admin/audit-log" element={<RequireAdmin><AdminAuditLog /></RequireAdmin>} />
 
               <Route path="/browse-errands" element={<Navigate to="/tasks/browse" replace />} />
               <Route path="/post-errand" element={<Navigate to="/tasks/post" replace />} />
