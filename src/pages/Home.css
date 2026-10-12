@@ -73,3 +73,15 @@
 .runner-text{text-align:left}.runner-text .btn{width:100%;white-space:normal}
 }
 @media(prefers-reduced-motion:reduce){.home-page *,.home-page *::before,.home-page *::after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}}
+
+.home-section-link{display:flex;justify-content:center;margin-top:2rem}
+.home-section-eyebrow{margin:0 0 .7rem;color:#B85E00;font-size:.72rem;font-weight:850;letter-spacing:.13em;text-align:center}
+.home-section-intro{max-width:700px;margin:1rem auto 0;color:#596273;line-height:1.8;text-align:center}
+.testimonial-author{display:flex;flex-direction:column;align-items:center;gap:.2rem;margin-top:.25rem;text-align:center}
+.testimonial-author strong{color:#1F2937;font-size:.95rem;font-weight:800}
+.testimonial-author span{color:#6B7280;font-size:.82rem}
+.task-journey-section{background:#F8FAFC}
+.journey-card{height:100%}
+.home-payment-note{max-width:850px;margin:1.5rem auto 0;color:#6B7280;font-size:.9rem;line-height:1.8;text-align:center}
+.runner-description{max-width:560px;margin:-.4rem 0 1.5rem;color:#D1D5DB;line-height:1.8}
+@media(max-width:640px){.home-section-link{margin-top:1.5rem}.home-section-link .btn{width:100%;white-space:normal}.home-section-intro{text-align:left}.testimonial-author{align-items:center}.runner-description{margin-top:0}}
