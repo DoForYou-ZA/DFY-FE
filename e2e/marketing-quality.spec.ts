@@ -62,6 +62,7 @@ test.describe('public marketing experience', () => {
     await page.goto('/faq')
     await page.getByRole('searchbox', { name: /search frequently asked questions/i }).fill('24-hour')
     await expect(page.getByText(/creator has a 24-hour confirmation period/i)).toBeVisible()
+    await page.getByRole('searchbox', { name: /search frequently asked questions/i }).fill('')
     await page.getByRole('button', { name: /runners/i }).click()
     await expect(page.getByRole('heading', { name: /^runners$/i })).toBeVisible()
     await expect(page.getByText(/how do i become a runner/i)).toBeVisible()
