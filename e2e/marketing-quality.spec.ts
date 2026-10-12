@@ -43,10 +43,10 @@ test.describe('public marketing experience', () => {
 
   test('public journey pages explain distinct creator, runner, and completion steps', async ({ page }) => {
     const routes = [
-      { path: '/how-it-works', heading: /how doforyou works/i },
-      { path: '/for-creators', heading: /get help with your to-do list/i },
-      { path: '/for-runners', heading: /make your time count/i },
-      { path: '/faq', heading: /frequently asked questions/i },
+      { path: '/how-it-works', heading: /from “i need a hand” to “all sorted\.”/i },
+      { path: '/for-creators', heading: /your to-do list deserves a team effort/i },
+      { path: '/for-runners', heading: /your time has value\. put it to work/i },
+      { path: '/faq', heading: /good questions deserve clear answers/i },
       { path: '/payments-and-completion', heading: /task completion and payment status/i },
     ]
 
@@ -56,6 +56,15 @@ test.describe('public marketing experience', () => {
       await expect(page.locator('#main-content')).toBeVisible()
       await expect(page.locator('footer')).toBeVisible()
     }
+  })
+
+  test('FAQ search and topic filters narrow answers accessibly', async ({ page }) => {
+    await page.goto('/faq')
+    await page.getByRole('searchbox', { name: /search frequently asked questions/i }).fill('24-hour')
+    await expect(page.getByText(/creator has a 24-hour confirmation period/i)).toBeVisible()
+    await page.getByRole('button', { name: /runners/i }).click()
+    await expect(page.getByRole('heading', { name: /^runners$/i })).toBeVisible()
+    await expect(page.getByText(/how do i become a runner/i)).toBeVisible()
   })
 
   test('footer has working links to help, payments, creators, and runners', async ({ page }) => {
