@@ -92,6 +92,6 @@ jobs:
           name: dfy-staging-mobile-marketing-screenshots
           path: |
             dfy-mobile/website-assets/mobile-app/*.png
-            dfy-mobile/test-results/marketing-screenshots/
+            dfy-mobile/test-results/marketing-screenshots/**/test-failed-*.png
           if-no-files-found: warn
           retention-days: 14
