@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import type { FormEvent, CSSProperties } from 'react'
 import { adminApi } from '../../api'
 
 type Testimonial = {
@@ -42,7 +43,7 @@ export default function AdminTestimonials() {
   const resetForm = () => { setForm(emptyForm); setEditingId(null); setError(''); setNotice('') }
   const updateField = (key: keyof FormState, value: string | boolean) => setForm(current => ({ ...current, [key]: value }))
 
-  const save = async (event: React.FormEvent<HTMLFormElement>) => {
+  const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSaving(true); setError(''); setNotice('')
     const payload = { name: form.name.trim(), role: form.role.trim(), text: form.text.trim(), isPublished: form.isPublished, ...(form.sortOrder.trim() ? { sortOrder: Number(form.sortOrder) } : {}) }
@@ -178,4 +179,4 @@ export default function AdminTestimonials() {
   )
 }
 
-const fieldStyle: React.CSSProperties = { width: '100%', minHeight: 44, padding: '.7rem .8rem', border: '1px solid var(--border)', borderRadius: 9, color: 'var(--text)', background: 'var(--surface, #fff)', font: 'inherit' }
+const fieldStyle: CSSProperties = { width: '100%', minHeight: 44, padding: '.7rem .8rem', border: '1px solid var(--border)', borderRadius: 9, color: 'var(--text)', background: 'var(--surface, #fff)', font: 'inherit' }
