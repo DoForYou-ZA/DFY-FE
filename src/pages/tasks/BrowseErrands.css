@@ -528,3 +528,42 @@
 @media(max-width:560px){.browse-hero-trust{display:grid;grid-template-columns:1fr;gap:.65rem}.browse-page .browse-toolbar{padding:1rem}.browse-toolbar-stat{align-items:flex-start;flex-direction:column;gap:.1rem}.browse-page .tasks-grid{grid-template-columns:1fr}.browse-page .task-card-body{padding:1rem}.browse-page .task-card-footer{grid-template-columns:1fr 1.1fr}.browse-page .task-card-footer .btn{padding:.65rem .5rem;font-size:.82rem}}
 @media(max-width:380px){.browse-hero-copy h1{font-size:2.35rem}.browse-page .task-card-footer{grid-template-columns:1fr}.browse-page .browse-toolbar .btn{width:100%;justify-content:center}}
 @media(prefers-reduced-motion:reduce){.browse-page .task-card,.browse-page .task-card:hover{transition:none;transform:none}}
+
+/* Mobile runner workspace: keep the refresh metadata readable without a full-width button. */
+@media (max-width: 560px) {
+  .user-dashboard-content .browse-page .browse-toolbar {
+    align-items: stretch;
+    gap: .65rem;
+    min-width: 0;
+  }
+
+  .user-dashboard-content .browse-page .browse-toolbar-right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .55rem .75rem;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .user-dashboard-content .browse-page .browse-refresh-timer {
+    flex: 1 1 175px;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+    font-size: .76rem;
+  }
+
+  .user-dashboard-content .browse-page .browse-toolbar-right .btn {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 40px;
+    padding: .5rem .75rem;
+    font-size: .78rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+}
+

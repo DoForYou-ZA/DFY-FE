@@ -178,7 +178,7 @@ export default function BrowseErrands() {
         </header>
       )}
       <div className="container browse-content">
-        <div className="browse-toolbar"><div className="browse-toolbar-stat"><strong>{totalItems}</strong><span>Available Tasks</span></div><div className="browse-toolbar-right"><span className="browse-refresh-timer"><i className="fas fa-clock" /> Last updated: {lastUpdated.toLocaleTimeString()}</span><button className="btn btn-secondary btn-sm" onClick={handleManualRefresh} disabled={loading}><i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`} /> {loading ? 'Refreshing...' : 'Refresh'}</button></div></div>
+        <div className="browse-toolbar"><div className="browse-toolbar-stat"><strong>{totalItems}</strong><span>Available Tasks</span></div><div className="browse-toolbar-right"><span className="browse-refresh-timer"><i className="fas fa-clock" /> Last updated: {lastUpdated.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' })}</span><button className="btn btn-secondary btn-sm" onClick={handleManualRefresh} disabled={loading}><i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`} /> {loading ? 'Refreshing...' : 'Refresh'}</button></div></div>
 
       <div className="container">
         <div className="filters-card"><div className="filters-row">
