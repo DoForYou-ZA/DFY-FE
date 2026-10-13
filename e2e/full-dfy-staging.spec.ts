@@ -24,9 +24,9 @@ async function apiLogin(api: APIRequestContext, email: string, password: string)
   })
   expect(response.ok(), `Login failed: HTTP ${response.status()} body=${await response.text()}`).toBeTruthy()
   const body = await response.json()
-  expect(body.success).toBeTruthy()
+  expect(body.success, `Login returned success=false for ${email}: ${JSON.stringify(body)}`).toBeTruthy()
   const token = body.token || body.data?.token
-  expect(token).toBeTruthy()
+  expect(token, `Login response did not contain a token for ${email}: ${JSON.stringify(body)}`).toBeTruthy()
   return String(token)
 }
 
@@ -149,13 +149,16 @@ async function ensureRunnerBank(api: APIRequestContext, runnerToken: string) {
 
 test.describe('DFY escrow and dispute workflow', () => {
   test('admin-verified test payment -> runner completes -> creator confirms -> payout is queued', async ({ page, request }) => {
+    // Authenticate the pre-provisioned runner and admin before creating any records.
+    // Misconfigured secrets must fail before this E2E leaves a fresh creator behind.
+    const runnerToken = await apiLogin(request, requireEnv('DFY_RUNNER_EMAIL', RUNNER_EMAIL), requireEnv('DFY_RUNNER_PASSWORD', RUNNER_PASSWORD))
+    await ensureRunnerBank(request, runnerToken)
+    const adminToken = await apiLogin(request, requireEnv('DFY_ADMIN_EMAIL', ADMIN_EMAIL), requireEnv('DFY_ADMIN_PASSWORD', ADMIN_PASSWORD))
+
     const freshCreator = await provisionFreshCreator(request)
     const creatorEmail = freshCreator.email
     const creatorPassword = freshCreator.password
-    const runnerToken = await apiLogin(request, requireEnv('DFY_RUNNER_EMAIL', RUNNER_EMAIL), requireEnv('DFY_RUNNER_PASSWORD', RUNNER_PASSWORD))
-    await ensureRunnerBank(request, runnerToken)
     const creatorToken = await apiLogin(request, creatorEmail, creatorPassword)
-    const adminToken = await apiLogin(request, requireEnv('DFY_ADMIN_EMAIL', ADMIN_EMAIL), requireEnv('DFY_ADMIN_PASSWORD', ADMIN_PASSWORD))
 
     const created = await createTask(request, creatorToken, 'CONFIRM-' + Date.now())
 
@@ -222,11 +225,13 @@ test.describe('DFY escrow and dispute workflow', () => {
   })
 
   test('runner dispute freezes escrow -> admin resolves dispute -> payout path is re-opened', async ({ browser, page, request }) => {
+    // Preflight all existing privileged/test accounts before creating a creator or task.
     const runnerToken = await apiLogin(request, requireEnv('DFY_RUNNER_EMAIL', RUNNER_EMAIL), requireEnv('DFY_RUNNER_PASSWORD', RUNNER_PASSWORD))
     await ensureRunnerBank(request, runnerToken)
+    const adminToken = await apiLogin(request, requireEnv('DFY_ADMIN_EMAIL', ADMIN_EMAIL), requireEnv('DFY_ADMIN_PASSWORD', ADMIN_PASSWORD))
+
     const freshCreator = await provisionFreshCreator(request)
     const creatorToken = await apiLogin(request, freshCreator.email, freshCreator.password)
-    const adminToken = await apiLogin(request, requireEnv('DFY_ADMIN_EMAIL', ADMIN_EMAIL), requireEnv('DFY_ADMIN_PASSWORD', ADMIN_PASSWORD))
 
     const created = await createTask(request, creatorToken, 'DISPUTE-' + Date.now())
     await adminVerify(request, adminToken, created.taskId)
