@@ -124,10 +124,10 @@ test.describe('DFY escrow and dispute workflow', () => {
     await ensureRunnerBank(request, runnerToken)
     const adminToken = await apiLogin(request, requireEnv('DFY_ADMIN_EMAIL', ADMIN_EMAIL), requireEnv('DFY_ADMIN_PASSWORD', ADMIN_PASSWORD))
 
-    const freshCreator = await provisionFreshCreator(request)
+    const freshCreator = await useConfiguredCreator(request)
     const creatorEmail = freshCreator.email
     const creatorPassword = freshCreator.password
-    const creatorToken = await apiLogin(request, creatorEmail, creatorPassword)
+    const creatorToken = freshCreator.token
 
     const created = await createTask(request, creatorToken, 'CONFIRM-' + Date.now())
 
