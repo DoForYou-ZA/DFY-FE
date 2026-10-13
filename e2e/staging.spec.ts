@@ -156,12 +156,14 @@ test('user can view profile page', async ({ page }) => {
 })
 
 test('runner can browse available tasks', async ({ page }) => {
-  test.skip(!ALLOW_STAGING_REGISTRATION_WRITES, 'This test creates persistent users; enable only against an isolated E2E database.')
-  const email = makeEmail('runner-browse')
-  await register(page, email, 'runner')
-  await login(page, email)
+  // Browsing is public, so this smoke test must not register a persistent user
+  // or depend on account credentials. Assert the actual browse-page controls:
+  // the hero was intentionally removed, so a "Find a task" heading is no longer
+  // part of the page contract.
   await gotoWithRetry(page, '/tasks/browse')
-  await expect(page.getByRole('heading', { name: /find a task/i })).toBeVisible({ timeout: 15_000 })
+  await waitForAppReady(page)
+  await expect(page.getByRole('searchbox', { name: /search tasks/i })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('combobox')).toBeVisible({ timeout: 15_000 })
 })
 
 test('poster can access post errand page', async ({ page }) => {
