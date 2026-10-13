@@ -24,7 +24,7 @@ function tokenOf(body) {
     body?.data?.accessToken || body?.data?.access_token;
 }
 function idOf(body) {
-  return body?.id || body?.taskId || body?.data?.id || body?.data?.taskId;
+  return body?.id || body?.taskId || body?.data?.id || body?.data?.taskId || body?.data?.task?.taskId || body?.data?.task?.id;
 }
 let r = await request("/auth/login", { method:"POST", body:JSON.stringify({
   email: CREATOR_EMAIL, password: CREATOR_PASSWORD
