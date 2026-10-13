@@ -96,6 +96,7 @@ export const adminApi = {
   resolveDispute: (id: number, resolution: string, action: string, reason: string) => api.patch(`/disputes/${id}/resolve`, { resolution, action, reason }),
   deleteTask: (taskId: string) => api.delete(`/admin/tasks/${taskId}`),
   deleteUser: (userId: number) => api.delete(`/admin/users/${userId}`),
+  restoreUser: (userId: number) => api.post(`/admin/users/${userId}/restore`),
   getTaskMessages: (taskId: string) => api.get(`/admin/tasks/${taskId}/messages`),
 }
 
