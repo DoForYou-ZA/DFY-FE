@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { publicApi } from '../api'
 import { usePostErrand } from '../hooks/usePostErrand'
 import { usePageMetadata } from '../hooks/usePageMetadata'
 import './Home.css'
@@ -9,15 +11,23 @@ const features = [
   { image: new URL('../assets/images/image3.jpeg', import.meta.url).href, title: 'Confirm Completion', description: 'Follow the task through completion and confirm the result or raise a concern.' },
 ]
 
-const testimonials = [
-  { name: 'Thabo M.', role: 'Task Creator', text: 'DoForYou helped me find someone to handle my grocery shopping within hours. Amazing service!' },
-  { name: 'Lerato K.', role: 'Task Runner', text: "I've been earning extra income on weekends by completing tasks in my area. Highly recommend!" },
-  { name: 'Sipho N.', role: 'Task Creator', text: 'The platform is so easy to use. I posted a task and had it completed the same day.' },
-]
+type PublicTestimonial = { id: number; name: string; role: string; text: string; sortOrder: number }
 
 export default function Home() {
   usePageMetadata('DoForYou — Let’s Get It Done | South Africa Task Marketplace', "Post a task, connect with local runners, and get everyday jobs done with DoForYou — South Africa's task marketplace.")
   const { handlePostErrand, ProfileIncompleteModal } = usePostErrand()
+  const [testimonials, setTestimonials] = useState<PublicTestimonial[]>([])
+
+  useEffect(() => {
+    let active = true
+    publicApi.getTestimonials()
+      .then(response => {
+        const data = response.data?.data
+        if (active) setTestimonials(Array.isArray(data) ? data : [])
+      })
+      .catch(() => { if (active) setTestimonials([]) })
+    return () => { active = false }
+  }, [])
   return (
     <>
       <div className="home-page">
@@ -100,14 +110,14 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="testimonials-section" aria-labelledby="testimonials-heading">
+        {testimonials.length > 0 && <section className="testimonials-section" aria-labelledby="testimonials-heading">
           <div className="container">
             <p className="home-section-eyebrow">FROM THE DOFORYOU COMMUNITY</p>
             <h2 id="testimonials-heading" className="section-title text-center">What people say</h2>
             <p className="home-section-intro">Experiences from people using DoForYou to get everyday tasks done and find local earning opportunities.</p>
             <div className="testimonials-grid">
               {testimonials.map((t) => (
-                <article key={t.name} className="testimonial-card">
+                <article key={t.id} className="testimonial-card">
                   <div className="testimonial-avatar" aria-hidden="true">{t.name.charAt(0)}</div>
                   <p className="testimonial-text">“{t.text}”</p>
                   <div className="testimonial-author"><strong>{t.name}</strong><span>{t.role}</span></div>
@@ -115,7 +125,7 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </section>
+        </section>}
 
         <section className="testimonials-section task-journey-section" aria-labelledby="completion-heading">
           <div className="container">

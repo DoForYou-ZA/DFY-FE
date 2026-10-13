@@ -3,6 +3,7 @@ import type { LoginModel, RegisterModel, AuthResponse, Task } from '../types'
 
 export const publicApi = {
   getStats: () => api.get('/public/stats'),
+  getTestimonials: () => api.get('/testimonials'),
 }
 
 export const authApi = {
@@ -98,6 +99,12 @@ export const adminApi = {
   deleteUser: (userId: number) => api.delete(`/admin/users/${userId}`),
   restoreUser: (userId: number) => api.post(`/admin/users/${userId}/restore`),
   getTaskMessages: (taskId: string) => api.get(`/admin/tasks/${taskId}/messages`),
+  getTestimonials: () => api.get('/testimonials/admin'),
+  createTestimonial: (data: object) => api.post('/testimonials', data),
+  updateTestimonial: (id: number, data: object) => api.put(`/testimonials/${id}`, data),
+  setTestimonialPublished: (id: number, isPublished: boolean) => api.patch(`/testimonials/${id}/publish`, { isPublished }),
+  reorderTestimonial: (id: number, sortOrder: number) => api.patch(`/testimonials/${id}/reorder`, { sortOrder }),
+  deleteTestimonial: (id: number) => api.delete(`/testimonials/${id}`),
 }
 
 export const disputesApi = {

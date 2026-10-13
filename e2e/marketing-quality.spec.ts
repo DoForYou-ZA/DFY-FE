@@ -44,6 +44,16 @@ test.describe('public marketing experience', () => {
   })
 
   test('homepage keeps the testimonial section and clear task journey', async ({ page }) => {
+    // This is a frontend presentation test: provide deterministic CMS content instead of depending on staging API deployment order.
+    await page.route('**/testimonials', route => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true, data: [
+        { id: 1, name: 'Thabo M.', role: 'Task Creator', text: 'A helpful experience.', sortOrder: 1 },
+        { id: 2, name: 'Lerato K.', role: 'Task Runner', text: 'A great opportunity.', sortOrder: 2 },
+        { id: 3, name: 'Sipho N.', role: 'Task Creator', text: 'Simple to use.', sortOrder: 3 },
+      ] }),
+    }))
     await page.goto('/')
     await expect(page.getByRole('heading', { name: /what people say/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /a clear task journey/i })).toBeVisible()
