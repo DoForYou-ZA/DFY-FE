@@ -112,5 +112,11 @@ jobs:
           cat /tmp/dfy-preview.log
           exit 1
 
+      # Browse Tasks modal coverage requires published staging tasks. Seed/reuse
+      # stable tasks with the configured creator/admin accounts before running
+      # mobile UI tests; this does not register users or create duplicate tasks.
+      - name: Seed reusable staging Browse Tasks
+        run: npm test -- e2e/seed-staging-browse-tasks.spec.ts
+
       - name: Run mobile and marketing quality suite
         run: npm test -- e2e/mobile-responsive.spec.ts e2e/marketing-quality.spec.ts
