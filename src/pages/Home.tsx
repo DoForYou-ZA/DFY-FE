@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { publicApi } from '../api'
 import { usePostErrand } from '../hooks/usePostErrand'
 import { usePageMetadata } from '../hooks/usePageMetadata'
 import './Home.css'
@@ -17,45 +15,9 @@ const testimonials = [
   { name: 'Sipho N.', role: 'Task Creator', text: 'The platform is so easy to use. I posted a task and had it completed the same day.' },
 ]
 
-interface PublicStats {
-  tasksCompleted: number
-  taskCreators: number
-  activeRunners: number
-  averageRating: number
-}
-
-const formatCount = (value: number) => {
-  if (value >= 1000) {
-    const thousands = value / 1000
-    const formatted = thousands >= 10 ? Math.floor(thousands) : Math.round(thousands * 10) / 10
-    return formatted + 'k+'
-  }
-  return String(value)
-}
-
 export default function Home() {
   usePageMetadata('DoForYou — Let’s Get It Done | South Africa Task Marketplace', "Post a task, connect with local runners, and get everyday jobs done with DoForYou — South Africa's task marketplace.")
   const { handlePostErrand, ProfileIncompleteModal } = usePostErrand()
-  const [stats, setStats] = useState<PublicStats | null>(null)
-
-  useEffect(() => {
-    let mounted = true
-    publicApi.getStats()
-      .then(response => {
-        const data = response.data?.data || response.data
-        if (mounted && data) {
-          setStats({
-            tasksCompleted: Number(data.tasksCompleted) || 0,
-            taskCreators: Number(data.taskCreators) || 0,
-            activeRunners: Number(data.activeRunners) || 0,
-            averageRating: Number(data.averageRating) || 0,
-          })
-        }
-      })
-      .catch(() => {})
-    return () => { mounted = false }
-  }, [])
-
   return (
     <>
       <div className="home-page">
@@ -70,14 +32,6 @@ export default function Home() {
                 <button onClick={handlePostErrand} className="btn btn-primary btn-lg">Post a Task <span aria-hidden="true">↗</span></button>
               </div>
               <div className="hero-trust-note"><span className="hero-trust-mark" aria-hidden="true"><i className="fas fa-check" /></span><span>Clear task details. Local people. Progress you can follow.</span></div>
-              {stats && (
-                <div className="hero-stats" aria-label="DoForYou marketplace statistics">
-                  {stats.tasksCompleted > 0 && <div><strong>{formatCount(stats.tasksCompleted)}</strong><span>Tasks completed</span></div>}
-                  {stats.taskCreators > 0 && <div><strong>{formatCount(stats.taskCreators)}</strong><span>Task creators</span></div>}
-                  {stats.activeRunners > 0 && <div><strong>{formatCount(stats.activeRunners)}</strong><span>Active runners</span></div>}
-                  {stats.averageRating > 0 && <div><strong>{stats.averageRating.toFixed(1)}/5</strong><span>Average rating</span></div>}
-                </div>
-              )}
             </div>
             <div className="hero-visual" aria-label="Everyday tasks and local help">
               <div className="hero-photo-main">
