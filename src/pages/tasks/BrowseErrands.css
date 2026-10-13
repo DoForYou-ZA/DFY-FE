@@ -487,6 +487,7 @@
 .browse-hero-visual{position:relative;min-width:0;padding:0 0 1.2rem 1.2rem}
 .browse-hero-visual::before{content:"";position:absolute;z-index:-1;inset:1.1rem 0 0 0;border:1px solid rgba(255,138,0,.6);border-radius:22px;transform:rotate(2deg)}
 .browse-hero-visual img{display:block;width:100%;height:clamp(260px,34vw,410px);object-fit:cover;object-position:center;border-radius:20px;box-shadow:0 24px 65px rgba(0,0,0,.28)}
+.browse-hero .marketing-actions{display:flex;flex-wrap:wrap;gap:.8rem}
 .browse-hero-image-note{position:absolute;left:2rem;right:.8rem;bottom:0;display:flex;align-items:center;gap:.55rem;width:fit-content;max-width:calc(100% - 3rem);padding:.7rem .9rem;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:rgba(17,24,39,.92);color:#F9FAFB;font-size:.76rem;font-weight:650;box-shadow:0 10px 24px rgba(0,0,0,.18)}
 .browse-hero-image-note .hero-caption-dot{width:7px;height:7px;flex:0 0 auto;border-radius:50%;background:#FF8A00}
 .browse-content{max-width:1240px;margin:0 auto}

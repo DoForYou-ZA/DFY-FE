@@ -7,6 +7,8 @@ import Pagination from '../../components/Pagination'
 import { usePageMetadata } from '../../hooks/usePageMetadata'
 import './BrowseErrands.css'
 
+const heroImage = new URL('../../assets/images/image2.jpeg', import.meta.url).href
+
 const CATEGORIES = ['Grocery Shopping', 'Delivery', 'Cleaning', 'Gardening', 'Moving', 'Repairs', 'Tutoring', 'Pet Care', 'Cooking', 'Other']
 const PAGE_SIZE = 10
 
@@ -151,13 +153,32 @@ export default function BrowseErrands() {
 
   return (
     <div className="browse-page">
+      {!isAuthenticated() && (
+        <header className="browse-hero premium-page-hero">
+          <div className="container browse-hero-grid">
+            <div className="browse-hero-copy">
+              <span className="marketing-kicker">AVAILABLE TASKS</span>
+              <h1>Find work. <em>Get paid.</em></h1>
+              <p>Browse local tasks posted by real people. Accept work that fits your skills and schedule, and receive payouts directly to your bank account.</p>
+              <div className="browse-hero-trust">
+                <span><i>✓</i> Verified payouts</span>
+                <span><i>✓</i> Protected payments</span>
+                <span><i>✓</i> Real local tasks</span>
+              </div>
+              <div className="marketing-actions" style={{ marginTop: '1.5rem' }}>
+                <Link className="btn btn-primary btn-lg" to="/register">Sign up to earn</Link>
+                <Link className="btn btn-secondary btn-lg" to="/login">Log in</Link>
+              </div>
+            </div>
+            <div className="browse-hero-visual">
+              <img src={heroImage} alt="A runner completing a local task" />
+              <div className="browse-hero-image-note"><span className="hero-caption-dot" /> Accept tasks · Complete work · Get paid</div>
+            </div>
+          </div>
+        </header>
+      )}
       <div className="container browse-content">
         <div className="browse-toolbar"><div className="browse-toolbar-stat"><strong>{totalItems}</strong><span>Available Tasks</span></div><div className="browse-toolbar-right"><span className="browse-refresh-timer"><i className="fas fa-clock" /> Last updated: {lastUpdated.toLocaleTimeString()}</span><button className="btn btn-secondary btn-sm" onClick={handleManualRefresh} disabled={loading}><i className={`fas fa-sync-alt ${loading ? 'fa-spin' : ''}`} /> {loading ? 'Refreshing...' : 'Refresh'}</button></div></div>
-
-      {!isAuthenticated() && <div className="container"><div className="guest-alert">
-        <i className="fas fa-user-plus" /><div><h4>Ready to earn?</h4><p>Create an account to accept tasks and receive payouts directly to your bank account.</p></div>
-        <div className="guest-actions"><Link to="/register" className="btn btn-primary btn-sm">Sign Up</Link><Link to="/login" className="btn btn-outline btn-sm">Login</Link></div>
-      </div></div>}
 
       <div className="container">
         <div className="filters-card"><div className="filters-row">
