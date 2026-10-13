@@ -45,14 +45,14 @@ export default function AdminTestimonials() {
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    const wasEditing = editingId !== null
     setSaving(true); setError(''); setNotice('')
     const payload = { name: form.name.trim(), role: form.role.trim(), text: form.text.trim(), isPublished: form.isPublished, ...(form.sortOrder.trim() ? { sortOrder: Number(form.sortOrder) } : {}) }
     try {
       if (editingId === null) await adminApi.createTestimonial(payload)
       else await adminApi.updateTestimonial(editingId, payload)
-      setNotice(editingId === null ? 'Testimonial created.' : 'Testimonial changes saved.')
       resetForm()
-      setNotice(editingId === null ? 'Testimonial created.' : 'Testimonial changes saved.')
+      setNotice(wasEditing ? 'Testimonial changes saved.' : 'Testimonial created.')
       await load()
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Could not save this testimonial. Please try again.')
