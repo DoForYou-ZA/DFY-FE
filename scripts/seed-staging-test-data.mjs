@@ -1,10 +1,11 @@
 const BASE = (process.env.DFY_API_URL || "https://dfy-be-staging.onrender.com/api/v1").replace(/\/$/, "");
 const ADMIN_EMAIL = process.env.DFY_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.DFY_ADMIN_PASSWORD;
-const TEST_PASSWORD = process.env.TEST_PASSWORD || "Test@1234";
+const CREATOR_EMAIL = process.env.DFY_CREATOR_EMAIL;
+const CREATOR_PASSWORD = process.env.DFY_CREATOR_PASSWORD;
 
-if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-  throw new Error("Missing DFY_ADMIN_EMAIL or DFY_ADMIN_PASSWORD GitHub secrets.");
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD || !CREATOR_EMAIL || !CREATOR_PASSWORD) {
+  throw new Error("Missing DFY_ADMIN_EMAIL/PASSWORD or DFY_CREATOR_EMAIL/PASSWORD GitHub secrets.");
 }
 
 async function request(path, options = {}) {
@@ -23,49 +24,12 @@ function tokenOf(body) {
     body?.data?.accessToken || body?.data?.access_token;
 }
 function idOf(body) {
-  return body?.id || body?.taskId || body?.data?.id || body?.data?.taskId;
+  return body?.id || body?.taskId || body?.data?.id || body?.data?.taskId || body?.data?.task?.taskId || body?.data?.task?.id;
 }
-function luhn(partial) {
-  let sum = 0, alt = true;
-  for (let i = partial.length - 1; i >= 0; i--) {
-    let n = Number(partial[i]);
-    if (alt) { n *= 2; if (n > 9) n -= 9; }
-    sum += n; alt = !alt;
-  }
-  return String((10 - (sum % 10)) % 10);
-}
-function makeId() {
-  const base = "900101" + String(Math.floor(Math.random()*10000)).padStart(4,"0") + "08";
-  return base + luhn(base);
-}
-function makePhone() {
-  return "082" + String(Math.floor(Math.random()*1e7)).padStart(7,"0");
-}
-
-const stamp = Date.now();
-const creator = {
-  firstName: "DFY",
-  lastName: "MobileTest",
-  email: `dfy_mobile_${stamp}@test.dfy`,
-  phoneNumber: makePhone(),
-  idNumber: makeId(),
-  address: "123 Test Street, Johannesburg",
-  password: TEST_PASSWORD,
-  userType: "Creator",
-};
-
-console.log(`Creating staging creator: ${creator.email}`);
-let r = await request("/auth/register", { method:"POST", body:JSON.stringify({
-  firstName: creator.firstName, lastName: creator.lastName, email: creator.email,
-  phoneNumber: creator.phoneNumber, userType: creator.userType, idNumber: creator.idNumber,
-  address: creator.address, password: creator.password, confirmPassword: creator.password
+let r = await request("/auth/login", { method:"POST", body:JSON.stringify({
+  email: CREATOR_EMAIL, password: CREATOR_PASSWORD
 })});
-if (!r.ok && r.status !== 409) throw new Error("Registration failed: " + r.status + " " + JSON.stringify(r.body));
-
-r = await request("/auth/login", { method:"POST", body:JSON.stringify({
-  email: creator.email, password: creator.password
-})});
-if (!r.ok) throw new Error("Creator login failed: " + r.status + " " + JSON.stringify(r.body));
+if (!r.ok) throw new Error("Configured creator login failed: " + r.status + " " + JSON.stringify(r.body));
 const creatorToken = tokenOf(r.body);
 if (!creatorToken) throw new Error("Creator login returned no access token.");
 
@@ -79,27 +43,39 @@ const tasks = [
 ];
 
 const ids = [];
+const postedResponse = await request("/tasks/my-posted?page=1&pageSize=100", {headers});
+if (!postedResponse.ok) throw new Error("Could not read tasks for configured creator: " + postedResponse.status);
+const postedBody = postedResponse.body;
+const existingTasks = Array.isArray(postedBody) ? postedBody :
+  (postedBody?.items || postedBody?.data?.tasks || postedBody?.data || postedBody?.tasks || []);
+
 for (let i=0;i<tasks.length;i++) {
   const [taskName, taskDescription, budget] = tasks[i];
-  const payload = {
-    taskName, taskDescription, category:"Home", area:"Johannesburg",
-    dateNeeded:new Date(Date.now()+86400000*(i+1)).toISOString(),
-    budget, notes:"Staging test task for mobile Browse Tasks responsiveness.",
-    priority:"Normal"
-  };
-  let created = await request("/tasks", { method:"POST", headers, body:JSON.stringify(payload) });
-  console.log(`Task ${i+1} create => ${created.status}`);
-  let taskId = idOf(created.body);
+  const existing = existingTasks.find(x => x.taskName === taskName);
+  let taskId = idOf(existing);
 
-  // Some staging builds persist the task before the payment-provider call fails.
   if (!taskId) {
-    const posted = await request("/tasks/my-posted?page=1&pageSize=100", {headers});
-    const list = Array.isArray(posted.body) ? posted.body :
-      (posted.body?.items || posted.body?.data || posted.body?.tasks || []);
-    const match = list.find(x => x.taskName === taskName);
-    taskId = idOf(match);
+    const payload = {
+      taskName, taskDescription, category:"Home", area:"Johannesburg",
+      dateNeeded:new Date(Date.now()+86400000*(i+1)).toISOString(),
+      budget, notes:"Staging test task for mobile Browse Tasks responsiveness.",
+      priority:"Normal"
+    };
+    const created = await request("/tasks", { method:"POST", headers, body:JSON.stringify(payload) });
+    console.log(`Task ${i+1} create => ${created.status}`);
+    taskId = idOf(created.body);
+
+    // Some staging builds persist the task before the payment-provider call fails.
+    if (!taskId) {
+      const posted = await request("/tasks/my-posted?page=1&pageSize=100", {headers});
+      const list = Array.isArray(posted.body) ? posted.body :
+        (posted.body?.items || posted.body?.data?.tasks || posted.body?.data || posted.body?.tasks || []);
+      taskId = idOf(list.find(x => x.taskName === taskName));
+    }
+  } else {
+    console.log(`Task ${i+1} already exists; reusing ${taskId}`);
   }
-  if (!taskId) throw new Error(`Could not recover task ${i+1}: ${JSON.stringify(created.body)}`);
+  if (!taskId) throw new Error(`Could not recover task ${i+1}.`);
   ids.push(taskId);
 }
 
@@ -127,6 +103,6 @@ if (found.length !== ids.length) throw new Error("Not all seeded tasks are visib
 
 console.log("");
 console.log("DFY STAGING SEED COMPLETE");
-console.log("Creator email: " + creator.email);
-console.log("Creator password: " + creator.password);
+console.log("Creator email: " + CREATOR_EMAIL);
+console.log("Creator password: [provided by GitHub Actions secret; not printed]");
 console.log("Task IDs: " + ids.join(", "));

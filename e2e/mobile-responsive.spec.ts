@@ -11,31 +11,6 @@ test.use({
   },
 })
 
-const PASSWORD = 'Test@1234'
-
-function makeEmail(prefix: string) {
-  return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '@example.com'
-}
-
-function makeIdentity() {
-  const sequence = String(Date.now() % 10000).padStart(4, '0')
-  const first12 = '900101' + sequence + '08'
-  const digits = first12.split('').map(Number)
-  let sum = 0
-  for (let i = 0; i < digits.length; i++) {
-    if (i % 2 === 0) sum += digits[i]
-    else {
-      const doubled = digits[i] * 2
-      sum += doubled > 9 ? doubled - 9 : doubled
-    }
-  }
-  return first12 + String((10 - (sum % 10)) % 10)
-}
-
-function makePhone() {
-  return '082' + String(Date.now() % 10000000).padStart(7, '0')
-}
-
 async function waitForAppReady(page: Page) {
   await page.waitForFunction(
     () => document.title !== 'Render - Application loading',
@@ -76,125 +51,18 @@ async function waitForApiReady() {
   }
 }
 
-async function seedBrowseTask() {
-  const apiBase = (process.env.DFY_API_URL || 'https://dfy-be-staging.onrender.com/api/v1').replace(/\/$/, '')
-  const adminEmail = process.env.DFY_ADMIN_EMAIL
-  const adminPassword = process.env.DFY_ADMIN_PASSWORD
+const CREATOR_EMAIL = process.env.DFY_CREATOR_EMAIL
+const CREATOR_PASSWORD = process.env.DFY_CREATOR_PASSWORD
+const RUNNER_EMAIL = process.env.DFY_RUNNER_EMAIL
+const RUNNER_PASSWORD = process.env.DFY_RUNNER_PASSWORD
 
-  if (!adminEmail || !adminPassword) {
-    throw new Error('Mobile modal E2E requires DFY_ADMIN_EMAIL and DFY_ADMIN_PASSWORD GitHub secrets.')
-  }
-
-  const api = await request.newContext()
-  try {
-    const login = async (email: string, password: string) => {
-      const response = await api.post(apiBase + '/auth/login', { data: { email, password } })
-      if (!response.ok()) throw new Error('Login failed: ' + response.status() + ' ' + await response.text())
-      const body = await response.json()
-      const token = body.token ?? body.data?.token
-      if (!token) throw new Error('No token returned for login.')
-      return String(token)
-    }
-
-    // Use a freshly registered creator with a standards-compliant email so the
-    // Paystack checkout initializer doesn't depend on a stale staging fixture.
-    const creatorEmail = makeEmail('dfy.mobile.modal')
-    const creatorPassword = PASSWORD
-    const registration = await api.post(apiBase + '/auth/register', {
-      data: {
-        firstName: 'DFY',
-        lastName: 'Mobile E2E',
-        email: creatorEmail,
-        phoneNumber: makePhone(),
-        userType: 'creator',
-        idNumber: makeIdentity(),
-        address: '123 Test Street, Johannesburg',
-        dateOfBirth: '1990-01-01T00:00:00.000Z',
-        password: creatorPassword,
-        confirmPassword: creatorPassword,
-      },
-    })
-    if (!registration.ok()) throw new Error('Creator registration failed: ' + registration.status() + ' ' + await registration.text())
-
-    const creatorToken = await login(creatorEmail, creatorPassword)
-    const adminToken = await login(adminEmail, adminPassword)
-    const label = 'Mobile Modal E2E ' + Date.now()
-
-    const createResponse = await api.post(apiBase + '/tasks', {
-      headers: { Authorization: 'Bearer ' + creatorToken },
-      data: {
-        taskName: label,
-        taskDescription: label + ' – automated mobile modal test.',
-        category: 'Other',
-        area: 'Johannesburg',
-        priority: 'standard',
-        dateNeeded: new Date(Date.now() + 2 * 86_400_000).toISOString(),
-        budget: 150,
-        notes: 'Automated mobile modal E2E – safe to ignore.',
-        termsAccepted: true,
-      },
-    })
-    if (!createResponse.ok()) throw new Error('Task creation failed: ' + createResponse.status() + ' ' + await createResponse.text())
-
-    const taskBody = await createResponse.json()
-    const taskId = String(taskBody.data?.task?.taskId || '')
-    if (!/^DFY-/.test(taskId)) throw new Error('Task creation did not return a DFY task ID.')
-
-    const paymentResponse = await api.get(apiBase + '/tasks/' + encodeURIComponent(taskId) + '/payment-url', {
-      headers: { Authorization: 'Bearer ' + creatorToken },
-    })
-    if (!paymentResponse.ok()) throw new Error('Payment URL failed: ' + paymentResponse.status() + ' ' + await paymentResponse.text())
-
-    const verifyResponse = await api.patch(apiBase + '/admin/tasks/bulk-verify', {
-      headers: { Authorization: 'Bearer ' + adminToken },
-      data: { taskIds: [taskId], reason: 'Mobile modal E2E payment simulation.' },
-    })
-    if (!verifyResponse.ok()) throw new Error('Admin verification failed: ' + verifyResponse.status() + ' ' + await verifyResponse.text())
-
-    for (let attempt = 0; attempt < 15; attempt++) {
-      const taskResponse = await api.get(apiBase + '/tasks/' + encodeURIComponent(taskId), {
-        headers: { Authorization: 'Bearer ' + creatorToken },
-      })
-      if (taskResponse.ok()) {
-        const task = (await taskResponse.json()).data
-        if (String(task?.status || '').toLowerCase() === 'posted') return
-      }
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    }
-
-    throw new Error('Seed task ' + taskId + ' did not reach Posted state.')
-  } finally {
-    await api.dispose()
+function requireTestAccounts() {
+  if (!CREATOR_EMAIL || !CREATOR_PASSWORD || !RUNNER_EMAIL || !RUNNER_PASSWORD) {
+    throw new Error('Mobile E2E requires DFY_CREATOR_EMAIL/PASSWORD and DFY_RUNNER_EMAIL/PASSWORD GitHub Actions secrets.')
   }
 }
-async function register(page: Page, email: string, userType: 'creator' | 'runner') {
-  await waitForApiReady()
-  await gotoWithRetry(page, '/register')
 
-  const registerRequest = page.waitForResponse((res) =>
-    res.url().includes('/auth/register') && res.request().method() === 'POST',
-    { timeout: 30_000 }
-  )
-
-  await page.getByPlaceholder('First Name *').fill('Mobile')
-  await page.getByPlaceholder('Last Name *').fill('Test')
-  await page.getByPlaceholder('Email Address *').fill(email)
-  await page.getByPlaceholder('Phone Number *').fill(makePhone())
-  await page.getByRole('button', { name: /continue/i }).click()
-
-  await page.locator(`label.role-card:has(input[value="${userType}"])`).click({ force: true })
-  await page.getByPlaceholder('ID Number *').fill(makeIdentity())
-  await page.getByPlaceholder('Address *').fill('123 Test Street, Johannesburg')
-  await page.getByRole('button', { name: /continue/i }).last().click()
-
-  await page.locator('input[placeholder="Password *"]').fill(PASSWORD)
-  await page.locator('input[placeholder="Confirm Password *"]').fill(PASSWORD)
-  await page.getByRole('button', { name: /create account/i }).click()
-  await registerRequest
-  await expect(page).toHaveURL(/login/i, { timeout: 30_000 })
-}
-
-async function login(page: Page, email: string) {
+async function login(page: Page, email: string, password: string) {
   await waitForApiReady()
   await gotoWithRetry(page, '/login')
   const loginRequest = page.waitForResponse((res) =>
@@ -202,9 +70,10 @@ async function login(page: Page, email: string) {
     { timeout: 30_000 }
   )
   await page.getByPlaceholder('Email Address').fill(email)
-  await page.getByPlaceholder('Password').fill(PASSWORD)
+  await page.getByPlaceholder('Password').fill(password)
   await page.getByRole('button', { name: /sign in/i }).click()
-  await loginRequest
+  const response = await loginRequest
+  if (!response.ok()) throw new Error('Configured test account login failed: ' + response.status() + ' ' + await response.text())
   await expect(page).toHaveURL(/dashboard/i, { timeout: 30_000 })
 }
 
@@ -331,10 +200,8 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('mobile task details modal', () => {
   test('view task modal stays fully inside the mobile viewport', async ({ page }) => {
-    // The public browse page is data-dependent. Seed one real Posted task so this
-    // test validates the actual modal instead of relying on pre-existing staging data.
-    await waitForApiReady()
-    await seedBrowseTask()
+    // Reuse existing staging tasks. This test must not register accounts or create tasks.
+    requireTestAccounts()
     await gotoWithRetry(page, '/tasks/browse')
 
     const viewTask = page.getByRole('button', { name: /view task/i }).first()
@@ -379,20 +246,9 @@ test.describe('mobile responsiveness - public screens', () => {
 })
 
 test.describe('mobile responsiveness - creator screens', () => {
-  let creatorEmail = ''
-
-  test.beforeAll(async () => {
-    const ctx = await request.newContext()
-    await ctx.get('https://dfy-be-staging.onrender.com/health')
-    await ctx.dispose()
-  })
-
   test.beforeEach(async ({ page }) => {
-    if (!creatorEmail) {
-      creatorEmail = makeEmail('mobile-creator')
-      await register(page, creatorEmail, 'creator')
-    }
-    await login(page, creatorEmail)
+    requireTestAccounts()
+    await login(page, CREATOR_EMAIL!, CREATOR_PASSWORD!)
   })
 
   for (const route of [
@@ -414,14 +270,9 @@ test.describe('mobile responsiveness - creator screens', () => {
 })
 
 test.describe('mobile responsiveness - runner screens', () => {
-  let runnerEmail = ''
-
   test.beforeEach(async ({ page }) => {
-    if (!runnerEmail) {
-      runnerEmail = makeEmail('mobile-runner')
-      await register(page, runnerEmail, 'runner')
-    }
-    await login(page, runnerEmail)
+    requireTestAccounts()
+    await login(page, RUNNER_EMAIL!, RUNNER_PASSWORD!)
   })
 
   for (const route of ['/dashboard', '/activity', '/tasks/browse', '/tasks/my-active', '/tasks/my-completed', '/messages', '/notifications', '/user/profile', '/user/bank-accounts']) {
