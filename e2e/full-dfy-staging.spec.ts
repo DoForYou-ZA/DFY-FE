@@ -30,42 +30,11 @@ async function apiLogin(api: APIRequestContext, email: string, password: string)
   return String(token)
 }
 
-async function provisionFreshCreator(api: APIRequestContext) {
-  const unique = Date.now() + '_' + Math.random().toString(36).slice(2, 8)
-  const email = 'dfy.e2e.creator.' + unique + '@gmail.com'
+async function useConfiguredCreator(api: APIRequestContext) {
+  const email = requireEnv('DFY_CREATOR_EMAIL', CREATOR_EMAIL)
   const password = requireEnv('DFY_CREATOR_PASSWORD', CREATOR_PASSWORD)
-  const phone = '082' + String(Date.now() % 10000000).padStart(7, '0')
-  const sequence = String(Date.now() % 10000).padStart(4, '0')
-  const first12 = '900101' + sequence + '08'
-  const digits = first12.split('').map(Number)
-  let sum = 0
-  for (let i = 0; i < digits.length; i++) {
-    if (i % 2 === 0) sum += digits[i]
-    else {
-      const doubled = digits[i] * 2
-      sum += doubled > 9 ? doubled - 9 : doubled
-    }
-  }
-  const idNumber = first12 + String((10 - (sum % 10)) % 10)
-
-  const response = await api.post(`${API_BASE_URL}/auth/register`, {
-    headers: { 'Content-Type': 'application/json' },
-    data: {
-      firstName: 'DFY',
-      lastName: 'E2E Creator',
-      email,
-      phoneNumber: phone,
-      userType: 'creator',
-      idNumber,
-      address: '123 Test Street, Johannesburg',
-      dateOfBirth: '1990-01-01T00:00:00.000Z',
-      password,
-      confirmPassword: password,
-    },
-  })
-  expect(response.ok(), `Fresh creator registration failed: HTTP ${response.status()} body=${await response.text()}`).toBeTruthy()
-  await apiLogin(api, email, password)
-  return { email, password }
+  const token = await apiLogin(api, email, password)
+  return { email, password, token }
 }
 async function loginUi(page: Page, email: string, password: string) {
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 })
@@ -230,8 +199,8 @@ test.describe('DFY escrow and dispute workflow', () => {
     await ensureRunnerBank(request, runnerToken)
     const adminToken = await apiLogin(request, requireEnv('DFY_ADMIN_EMAIL', ADMIN_EMAIL), requireEnv('DFY_ADMIN_PASSWORD', ADMIN_PASSWORD))
 
-    const freshCreator = await provisionFreshCreator(request)
-    const creatorToken = await apiLogin(request, freshCreator.email, freshCreator.password)
+    const freshCreator = await useConfiguredCreator(request)
+    const creatorToken = freshCreator.token
 
     const created = await createTask(request, creatorToken, 'DISPUTE-' + Date.now())
     await adminVerify(request, adminToken, created.taskId)
