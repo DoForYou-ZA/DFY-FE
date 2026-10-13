@@ -36,6 +36,7 @@ import AdminTasks from './pages/admin/AdminTasks'
 import AdminPayments from './pages/admin/AdminPayments'
 import AdminDisputes from './pages/admin/AdminDisputes'
 import AdminAuditLog from './pages/admin/AdminAuditLog'
+import AdminTestimonials from './pages/admin/AdminTestimonials'
 import { PaymentSuccess, PaymentCancelled } from './pages/PaymentPages'
 
 function ScrollToTop() {
@@ -89,6 +90,7 @@ export default function App() {
               <Route path="/admin/payments" element={<RequireAdmin><AdminPayments /></RequireAdmin>} />
               <Route path="/admin/disputes" element={<RequireAdmin><AdminDisputes /></RequireAdmin>} />
               <Route path="/admin/audit-log" element={<RequireAdmin><AdminAuditLog /></RequireAdmin>} />
+              <Route path="/admin/testimonials" element={<RequireAdmin><AdminTestimonials /></RequireAdmin>} />
 
               <Route path="/browse-errands" element={<Navigate to="/tasks/browse" replace />} />
               <Route path="/post-errand" element={<Navigate to="/tasks/post" replace />} />
