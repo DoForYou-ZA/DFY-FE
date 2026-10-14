@@ -30,7 +30,7 @@ export default function Footer() {
             <li><Link to="/for-creators"><i className="fas fa-plus-circle footer-link-icon" />Post a task</Link></li>
             <li><Link to="/for-runners"><i className="fas fa-running footer-link-icon" />Become a runner</Link></li>
             <li><Link to="/how-it-works"><i className="fas fa-route footer-link-icon" />How it works</Link></li>
-            <li><a href="/downloads/dfy-mobile.apk" download="dfy-mobile.apk" aria-label="Download the DoForYou Android staging app APK"><i className="fas fa-mobile-alt footer-link-icon" />Download the Android app <i className="fas fa-arrow-down" aria-hidden="true" /></a></li>
+            <li><a href="/downloads/dfy-mobile.apk" download="dfy-mobile.apk" aria-label="Download the DoForYou Android staging app APK"><i className="fas fa-mobile-alt footer-link-icon" />Download the Android app <i className="fas fa-download" aria-hidden="true" /></a></li>
           </ul></div>
           <div><h3>Learn & support</h3><ul>
             <li><Link to="/faq"><i className="fas fa-question-circle footer-link-icon" />FAQs</Link></li>
