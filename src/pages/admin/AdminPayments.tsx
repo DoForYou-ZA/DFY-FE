@@ -218,6 +218,29 @@ export default function AdminPayments() {
                   )}
                 </div>
               )}
+              {(settlementReport.localSuccessfulAttemptsNotMatchedByReturnedSettlementReference || []).length > 0 && (
+                <div style={{ marginTop: '1rem' }}>
+                  <h3>Local successful payments not matched in this settlement window</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                    These are review candidates, not confirmed missing settlements. Payment and settlement dates can differ.
+                  </p>
+                  <div className="admin-table-wrap">
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                      <thead><tr style={{ textAlign: 'left', borderBottom: '2px solid var(--border)' }}>{['Reference', 'Task', 'Amount', 'Status', 'Completed'].map(h => <th key={h} style={{ padding: '0.65rem 0.5rem' }}>{h}</th>)}</tr></thead>
+                      <tbody>{settlementReport.localSuccessfulAttemptsNotMatchedByReturnedSettlementReference.map((row: any) => (
+                        <tr key={row.reference} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '0.65rem 0.5rem', fontFamily: 'monospace', overflowWrap: 'anywhere' }}>{row.reference}</td>
+                          <td style={{ padding: '0.65rem 0.5rem' }}>{row.taskId}</td>
+                          <td style={{ padding: '0.65rem 0.5rem', whiteSpace: 'nowrap' }}>R{Number(row.amount || 0).toFixed(2)}</td>
+                          <td style={{ padding: '0.65rem 0.5rem' }}>{row.status}</td>
+                          <td style={{ padding: '0.65rem 0.5rem', whiteSpace: 'nowrap' }}>{row.completedAt ? new Date(row.completedAt).toLocaleString('en-ZA') : '—'}</td>
+                        </tr>
+                      ))}</tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              {settlementReport.providerError && <div className="alert alert-warning" role="alert" style={{ marginTop: '1rem' }}>{settlementReport.providerError}</div>}
               {ledgerError && <div className="alert alert-warning" role="alert" style={{ marginTop: '1rem' }}>{ledgerError}</div>}
               {ledgerReport && (
                 <div style={{ marginTop: '1rem' }}>
