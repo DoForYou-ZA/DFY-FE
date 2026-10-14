@@ -97,7 +97,17 @@ export default function BrowseErrands() {
     const value = task.date_time_needed || task.dateNeeded
     return value ? new Date(value).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date flexible'
   }
-  const payout = (task: Task) => Number((task as any).payoutAmount ?? 0)
+  // The backend-calculated payout is the financial source of truth. Never derive it from the creator's budget here.
+  const payout = (task: Task): number | null => {
+    const raw = task.payoutAmount ?? (task as any).PayoutAmount
+    if (raw === null || raw === undefined || raw === '') return null
+    const amount = Number(raw)
+    return Number.isFinite(amount) && amount > 0 ? amount : null
+  }
+  const payoutLabel = (task: Task) => {
+    const amount = payout(task)
+    return amount === null ? 'Payout unavailable' : `R${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
 
   const openAccept = (task: Task) => {
     if (!isAuthenticated()) {
@@ -203,7 +213,7 @@ export default function BrowseErrands() {
                   <div className="task-meta-item"><i className="fas fa-map-marker-alt" /><span>{location(task)}</span></div>
                   <div className="task-meta-item"><i className="fas fa-calendar-alt" /><span>{date(task)}</span></div>
                 </div>
-                <div className="task-earnings"><span className="task-earnings-label">You earn</span><strong>R{payout(task).toFixed(0)}</strong></div>
+                <div className="task-earnings"><span className="task-earnings-label">You earn</span><strong>{payoutLabel(task)}</strong></div>
                 <div className="task-protection"><i className="fas fa-shield-alt" /><span>Protected payment · Direct bank payout</span></div>
               </div>
               <div className="task-card-footer">
@@ -232,7 +242,7 @@ export default function BrowseErrands() {
             <div className="detail-grid">
               <div className="detail-item"><span>Location</span><strong><i className="fas fa-map-marker-alt" /> {location(detailModal)}</strong></div>
               <div className="detail-item"><span>When</span><strong><i className="fas fa-calendar-alt" /> {date(detailModal)}</strong></div>
-              <div className="detail-item detail-earnings"><span>Your earnings</span><strong>R{payout(detailModal).toFixed(0)}</strong></div>
+              <div className="detail-item detail-earnings"><span>Your earnings</span><strong>{payoutLabel(detailModal)}</strong></div>
             </div>
             <div className="task-protection"><i className="fas fa-shield-alt" /><span>Payment is held by DFY and released to your verified bank account after the task is completed and confirmed.</span></div>
             {detailModal.notes && <div className="detail-notes"><strong>Additional details</strong><p>{detailModal.notes}</p></div>}
@@ -245,7 +255,7 @@ export default function BrowseErrands() {
         <div className="modal-box" onClick={e => e.stopPropagation()}>
           <div className="modal-header"><h3><i className="fas fa-handshake" /> Accept Task</h3><button className="btn-close" disabled={claimLoading} onClick={() => setClaimModal(null)}><i className="fas fa-times" /></button></div>
           <div className="modal-body">
-            <p>You're accepting:</p><div className="claim-task-info"><strong>{title(claimModal)}</strong><p>{description(claimModal)}</p><p><i className="fas fa-map-marker-alt" /> {location(claimModal)}</p><p><i className="fas fa-calendar-alt" /> {date(claimModal)}</p><p><i className="fas fa-money-bill-wave" /> You earn: <strong>R{payout(claimModal).toFixed(0)}</strong></p></div>
+            <p>You're accepting:</p><div className="claim-task-info"><strong>{title(claimModal)}</strong><p>{description(claimModal)}</p><p><i className="fas fa-map-marker-alt" /> {location(claimModal)}</p><p><i className="fas fa-calendar-alt" /> {date(claimModal)}</p><p><i className="fas fa-money-bill-wave" /> You earn: <strong>{payoutLabel(claimModal)}</strong></p></div>
             <div className="alert alert-info"><strong>Before you accept</strong><ul style={{ margin: '.5rem 0 0 1rem' }}><li>A verified Paystack bank account is required before accepting.</li><li>Complete the task as described and within the agreed timing.</li><li>Keep task communication on DFY where practical.</li><li>Only mark the task complete when the work is actually finished.</li><li>Payment is released after the creator confirms completion.</li><li>Payout is sent directly to your verified bank account; DFY does not use a runner wallet.</li></ul></div>
             {needsPayoutAccount && <div className="alert alert-warning mt-3">Add and verify your payout destination first: <Link to="/user/bank-accounts" onClick={() => setClaimModal(null)}>Payout Settings</Link>.</div>}
             <label style={{ display:'flex', gap:'.6rem', alignItems:'flex-start', cursor:'pointer' }}><input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} /><span>I agree to the runner terms for this task.</span></label>

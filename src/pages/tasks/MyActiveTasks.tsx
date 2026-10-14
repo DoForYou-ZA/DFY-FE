@@ -5,6 +5,13 @@ import Pagination from '../../components/Pagination'
 
 const PAGE_SIZE = 10
 
+function formatRunnerPayout(value: unknown) {
+  if (value === null || value === undefined || value === '') return 'Payout unavailable'
+  const amount = Number(value)
+  if (!Number.isFinite(amount) || amount <= 0) return 'Payout unavailable'
+  return `R${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
 function getStatusBadge(status: string) {
   const s = status?.toLowerCase()
   const map: Record<string, string> = {
@@ -121,7 +128,7 @@ export default function MyActiveTasks() {
     taskName: t.taskName || t.name || '',
     area: t.location || t.area || '',
     budget: t.budget || 0,
-    payoutAmount: t.payoutAmount ?? 0,
+    payoutAmount: t.payoutAmount ?? t.PayoutAmount ?? null,
     taskStatus: t.status || t.taskStatus || '',
     dateNeeded: t.dueDate || t.dateNeeded || '',
     userName: t.creatorName || t.userName || '',
@@ -154,7 +161,7 @@ export default function MyActiveTasks() {
                   <div className="task-card-header">
                     <span className={getStatusBadge(t.taskStatus)}>{t.taskStatus}</span>
                     <div className="task-budget">
-                      R{Number(t.payoutAmount).toFixed(0)}
+                      {formatRunnerPayout(t.payoutAmount)}
                       <small style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: 4 }}>payout</small>
                     </div>
                   </div>
