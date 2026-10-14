@@ -3,6 +3,15 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+
+# Bundle the staging APK into the website so mobile users download it from
+# the DoForYou domain instead of being navigated to GitHub.
+RUN mkdir -p public/downloads \
+    && wget --https-only --tries=3 --timeout=30 \
+      -O public/downloads/dfy-mobile.apk \
+      https://github.com/DoForYou-ZA/dfy-mobile/releases/download/mobile-staging-latest/dfy-mobile.apk \
+    && test -s public/downloads/dfy-mobile.apk
+
 ARG VITE_API_URL
 ARG VITE_SIGNALR_URL
 ARG VITE_APP_NAME=DoForYou
