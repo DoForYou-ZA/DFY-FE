@@ -120,7 +120,13 @@ export default function MyCompletedTasks() {
     } catch { setRatingError('Failed to submit rating') } finally { setRatingLoading(false) }
   }
 
-  const fmt = (n: number) => `R${(n || 0).toFixed(2)}`
+  const fmtPayout = (value: unknown) => {
+    if (value === null || value === undefined || value === '') return 'Payout unavailable'
+    const amount = Number(value)
+    return Number.isFinite(amount) && amount > 0
+      ? `R${amount.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : 'Payout unavailable'
+  }
   const lifecycle = (t: any) => {
     const s = String(t.status || '').toLowerCase()
     const payout = String(t.payoutStatus || '').toLowerCase()
@@ -181,7 +187,7 @@ export default function MyCompletedTasks() {
                 <div className="task-card-header">
                   {(() => { const state = lifecycle(t); return <span className={`badge ${state.tone}`}>{state.label}</span> })()}
                   <div className="task-budget">
-                    {fmt(t.payoutAmount || t.budget * 0.85)}
+                    {fmtPayout(t.payoutAmount)}
                     <small style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginLeft: 4 }}>earned</small>
                   </div>
                 </div>
