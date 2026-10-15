@@ -1,5 +1,6 @@
 import api from './client'
 import type { LoginModel, RegisterModel, AuthResponse, Task } from '../types'
+import type { BackendTaskPage, BackendClaimTaskRequest, BackendBooleanResponse, BackendCreateTaskRequest, BackendUpdateTaskRequest } from './contract'
 
 export const publicApi = {
   getStats: () => api.get('/public/stats'),
@@ -23,7 +24,7 @@ export const messagesApi = {
 export const tasksApi = {
   getAvailable: (page = 1, pageSize = 10, filters: Record<string, string> = {}) => {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), ...filters })
-    return api.get(`/tasks/available?${params}`)
+    return api.get<BackendTaskPage>(`/tasks/available?${params}`)
   },
   getMyPosted: (page = 1, pageSize = 10, taskId?: string, status?: string) => api.get('/tasks/my-posted', { params: { page, pageSize, taskId, status } }),
   getMyPostedAll: async (): Promise<Task[]> => {
@@ -45,11 +46,14 @@ export const tasksApi = {
   getMyActive: (page = 1, pageSize = 10, taskId?: string) => api.get('/tasks/my-active', { params: { page, pageSize, taskId } }),
   getMyCompleted: (page = 1, pageSize = 10, taskId?: string, status?: string) => api.get('/tasks/my-completed', { params: { page, pageSize, taskId, status } }),
   getById: (id: string) => api.get(`/tasks/${id}`),
-  create: (data: object) => api.post('/tasks', data),
-  update: (id: string, data: object) => api.put(`/tasks/${id}`, data),
-  claim: (id: string, helperName: string, helperContact: string, termsAccepted = false) => api.post(`/tasks/${id}/claim`, { HelperName: helperName, HelperContact: helperContact, TermsAccepted: termsAccepted }),
-  complete: (id: string) => api.post(`/tasks/${id}/complete`, {}),
-  confirm: (id: string) => api.post(`/tasks/${id}/confirm`, {}),
+  create: (data: BackendCreateTaskRequest) => api.post('/tasks', data),
+  update: (id: string, data: BackendUpdateTaskRequest) => api.put(`/tasks/${id}`, data),
+  claim: (id: string, helperName: string, helperContact: string, termsAccepted = false) => {
+    const body: BackendClaimTaskRequest = { helperName, helperContact, termsAccepted }
+    return api.post<BackendBooleanResponse>(`/tasks/${id}/claim`, body)
+  },
+  complete: (id: string) => api.post<BackendBooleanResponse>(`/tasks/${id}/complete`, {}),
+  confirm: (id: string) => api.post<BackendBooleanResponse>(`/tasks/${id}/confirm`, {}),
   cancel: (id: string, reason: string) => api.post(`/tasks/${id}/cancel`, { reason }),
   getMessages: (id: string, params?: object) => api.get(`/tasks/${id}/messages`, { params }),
   sendMessage: (id: string, content: string) => api.post(`/tasks/${id}/messages`, { content }),

@@ -41,7 +41,7 @@ export default function BrowseErrands() {
       if (cat) filters.category = cat
       const res = await tasksApi.getAvailable(p, PAGE_SIZE, filters)
       const data = res.data
-      const list = data.tasks || data.data || []
+      const list = (data.tasks || []) as Task[]
       setTasks(Array.isArray(list) ? list : [])
       setTotalPages(data.totalPages || 1)
       setTotalItems(data.count || list.length)
