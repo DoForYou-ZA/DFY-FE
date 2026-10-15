@@ -6,9 +6,10 @@ COPY . .
 
 # Bundle the staging APK into the website so mobile users download it from
 # the DoForYou domain instead of being navigated to GitHub.
-RUN mkdir -p public/downloads \
-    && wget --https-only --tries=3 --timeout=30 \
-      -O public/downloads/dfy-mobile.apk \
+RUN apk add --no-cache curl \
+    && mkdir -p public/downloads \
+    && curl --fail --location --retry 3 --connect-timeout 15 --max-time 180 \
+      --output public/downloads/dfy-mobile.apk \
       https://github.com/DoForYou-ZA/dfy-mobile/releases/download/mobile-staging-latest/dfy-mobile.apk \
     && test -s public/downloads/dfy-mobile.apk
 
