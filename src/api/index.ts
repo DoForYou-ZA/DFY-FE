@@ -1,6 +1,6 @@
 import api from './client'
 import type { LoginModel, RegisterModel, AuthResponse, Task, CreateTaskData } from '../types'
-import type { BackendTaskPage, BackendClaimTaskRequest, BackendBooleanResponse } from './contract'
+import type { BackendTaskPage, BackendClaimTaskRequest, BackendBooleanResponse, BackendCreateTaskRequest, BackendUpdateTaskRequest } from './contract'
 
 export const publicApi = {
   getStats: () => api.get('/public/stats'),
@@ -46,8 +46,8 @@ export const tasksApi = {
   getMyActive: (page = 1, pageSize = 10, taskId?: string) => api.get('/tasks/my-active', { params: { page, pageSize, taskId } }),
   getMyCompleted: (page = 1, pageSize = 10, taskId?: string, status?: string) => api.get('/tasks/my-completed', { params: { page, pageSize, taskId, status } }),
   getById: (id: string) => api.get(`/tasks/${id}`),
-  create: (data: CreateTaskData) => api.post('/tasks', data),
-  update: (id: string, data: object) => api.put(`/tasks/${id}`, data),
+  create: (data: BackendCreateTaskRequest) => api.post('/tasks', data),
+  update: (id: string, data: BackendUpdateTaskRequest) => api.put(`/tasks/${id}`, data),
   claim: (id: string, helperName: string, helperContact: string, termsAccepted = false) => {
     const body: BackendClaimTaskRequest = { helperName, helperContact, termsAccepted }
     return api.post<BackendBooleanResponse>(`/tasks/${id}/claim`, body)
