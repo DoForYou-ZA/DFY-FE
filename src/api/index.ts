@@ -1,5 +1,5 @@
 import api from './client'
-import type { LoginModel, RegisterModel, AuthResponse, Task, CreateTaskData } from '../types'
+import type { LoginModel, RegisterModel, AuthResponse, Task } from '../types'
 import type { BackendTaskPage, BackendClaimTaskRequest, BackendBooleanResponse, BackendCreateTaskRequest, BackendUpdateTaskRequest } from './contract'
 
 export const publicApi = {
