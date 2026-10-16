@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { authApi } from '../../api'
+import { useAuth } from '../../context/AuthContext'
+import GoogleIdentityButton from '../../components/auth/GoogleIdentityButton'
 import './Auth.css'
 
 const STEPS = ['Personal Info', 'Choose Role', 'Security']
@@ -13,10 +15,28 @@ function isValidSouthAfricanPhone(value: string): boolean {
   return /^0[6-8]\d{8}$/.test(digits) || /^27[6-8]\d{8}$/.test(digits)
 }
 
+function decodeGoogleClaims(idToken: string | null): { email?: string; given_name?: string; family_name?: string; name?: string } {
+  if (!idToken) return {}
+  try {
+    const part = idToken.split('.')[1]
+    if (!part) return {}
+    const base64 = part.replace(/-/g, '+').replace(/_/g, '/')
+    const decoded = atob(base64 + '='.repeat((4 - base64.length % 4) % 4))
+    const json = decodeURIComponent(Array.from(decoded, ch => `%${ch.charCodeAt(0).toString(16).padStart(2, '0')}`).join(''))
+    return JSON.parse(json)
+  } catch {
+    return {}
+  }
+}
+
 export default function Register() {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
+  const authState = location.state as any
+  const [googleIdToken, setGoogleIdToken] = useState<string | null>(authState?.googleIdToken || null)
+  const initialGoogleClaims = decodeGoogleClaims(authState?.googleIdToken || null)
+  const { googleRegister } = useAuth()
   const returnToTaskId = (location.state as any)?.returnToTaskId || searchParams.get('returnToTaskId') || null
   const [step, setStep] = useState(1)
   const [error, setError] = useState('')
@@ -28,7 +48,8 @@ export default function Register() {
   const [marketingConsent, setMarketingConsent] = useState(false)
 
   const [form, setForm] = useState({
-    firstName: '', lastName: '', email: '', phoneNumber: '',
+    firstName: initialGoogleClaims.given_name || '', lastName: initialGoogleClaims.family_name || '',
+    email: initialGoogleClaims.email || '', phoneNumber: '',
     userType: '',
     password: '', confirmPassword: '',
   })
@@ -42,17 +63,52 @@ export default function Register() {
     return false
   }
 
+  const handleGoogleCredential = (idToken: string) => {
+    const claims = decodeGoogleClaims(idToken)
+    setGoogleIdToken(idToken)
+    setForm(current => ({
+      ...current,
+      firstName: current.firstName || claims.given_name || '',
+      lastName: current.lastName || claims.family_name || '',
+      email: claims.email || current.email,
+      password: '',
+      confirmPassword: '',
+    }))
+    setError('')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (form.password.length < 12 || form.password.length > 72 || new TextEncoder().encode(form.password).length > 72) { setError('Use a password between 12 and 72 characters and no more than 72 UTF-8 bytes.'); return }
-    if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return }
-    setError(''); setLoading(true)
+    if (!googleIdToken) {
+      if (form.password.length < 12 || form.password.length > 72 || new TextEncoder().encode(form.password).length > 72) { setError('Use a password between 12 and 72 characters and no more than 72 UTF-8 bytes.'); return }
+      if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return }
+    }
+    setError('')
     if (!termsAccepted || !privacyAccepted) {
       setError('Please accept the Terms & Conditions and Privacy Policy to create an account.')
-      setLoading(false)
       return
     }
+    setLoading(true)
     try {
+      if (googleIdToken) {
+        await googleRegister({
+          idToken: googleIdToken,
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          phoneNumber: form.phoneNumber.trim(),
+          userType: form.userType,
+          termsAccepted,
+          privacyAccepted,
+          termsVersion: TERMS_VERSION,
+          privacyVersion: PRIVACY_VERSION,
+          marketingConsent,
+        })
+        const dest = returnToTaskId
+          ? `/tasks/browse?taskId=${encodeURIComponent(returnToTaskId)}`
+          : '/dashboard'
+        navigate(dest, { replace: true })
+        return
+      }
       const res = await authApi.register({
         firstName: form.firstName.trim(), lastName: form.lastName.trim(),
         email: form.email.trim().toLowerCase(), phoneNumber: form.phoneNumber.trim(),
@@ -65,11 +121,12 @@ export default function Register() {
       if (res.data.success) {
         const query = returnToTaskId ? `?returnToTaskId=${encodeURIComponent(returnToTaskId)}` : ''
         navigate(`/login${query}`, { state: { registered: true, returnToTaskId } })
-      }
-      else setError(res.data.message || 'Registration failed')
+      } else setError(res.data.message || 'Registration failed')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.')
-    } finally { setLoading(false) }
+      setError(err.response?.data?.message || err.message || 'Registration failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -110,7 +167,8 @@ export default function Register() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <input type="email" className="form-input" placeholder="Email Address *" value={form.email} onChange={set('email')} required />
+                  <input type="email" className="form-input" placeholder="Email Address *" value={form.email} onChange={set('email')} readOnly={!!googleIdToken} required />
+                  {googleIdToken && <small className="text-muted text-xs">Google verified this email address.</small>}
                 </div>
                 <div className="form-group">
                   <input type="tel" className="form-input" placeholder="Phone Number *" value={form.phoneNumber} onChange={set('phoneNumber')} required />
@@ -118,6 +176,12 @@ export default function Register() {
                 <button type="button" className="btn btn-primary btn-block" onClick={() => canNext() && setStep(2)} disabled={!canNext()}>
                   Continue <i className="fas fa-arrow-right" />
                 </button>
+                {!googleIdToken && (
+                  <div style={{ display: 'grid', gap: '.75rem', marginTop: '1.25rem', textAlign: 'center' }}>
+                    <div className="text-muted text-sm">or</div>
+                    <GoogleIdentityButton mode="signup" onCredential={handleGoogleCredential} disabled={loading} />
+                  </div>
+                )}
               </div>
             )}
 
@@ -149,28 +213,37 @@ export default function Register() {
 
             {step === 3 && (
               <div className="step-content">
-                <div className="form-group">
-                  <div className="input-with-icon password-input">
-                    <i className="fas fa-lock" />
-                    <input type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Password *" value={form.password} onChange={set('password')} required minLength={12} maxLength={72} autoComplete="new-password" />
-                    <button type="button" className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
-                      <i className={`fas fa-eye${showPassword ? '-slash' : ''}`} />
-                    </button>
+                {!googleIdToken ? (
+                  <>
+                                  <div className="form-group">
+                                    <div className="input-with-icon password-input">
+                                      <i className="fas fa-lock" />
+                                      <input type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Password *" value={form.password} onChange={set('password')} required minLength={12} maxLength={72} autoComplete="new-password" />
+                                      <button type="button" className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
+                                        <i className={`fas fa-eye${showPassword ? '-slash' : ''}`} />
+                                      </button>
+                                    </div>
+                                    <small className="text-muted text-xs">Use 12–72 characters. A unique passphrase is recommended.</small>
+                                  </div>
+                                  <div className="form-group">
+                                    <div className="input-with-icon password-input">
+                                      <i className="fas fa-lock" />
+                                      <input type={showConfirm ? 'text' : 'password'} className="form-input" placeholder="Confirm Password *" value={form.confirmPassword} onChange={set('confirmPassword')} required />
+                                      <button type="button" className="toggle-password" onClick={() => setShowConfirm(!showConfirm)}>
+                                        <i className={`fas fa-eye${showConfirm ? '-slash' : ''}`} />
+                                      </button>
+                                    </div>
+                                    {form.confirmPassword && form.password !== form.confirmPassword && (
+                                      <span className="form-error">Passwords don't match</span>
+                                    )}
+                                  </div>
+                  </>
+                ) : (
+                  <div className="alert alert-info" role="status">
+                    <strong>Continue with Google</strong>
+                    <p className="text-sm" style={{ marginBottom: 0 }}>Google will be used to sign in. DoForYou will not create a separate password for this account.</p>
                   </div>
-                  <small className="text-muted text-xs">Use 12–72 characters. A unique passphrase is recommended.</small>
-                </div>
-                <div className="form-group">
-                  <div className="input-with-icon password-input">
-                    <i className="fas fa-lock" />
-                    <input type={showConfirm ? 'text' : 'password'} className="form-input" placeholder="Confirm Password *" value={form.confirmPassword} onChange={set('confirmPassword')} required />
-                    <button type="button" className="toggle-password" onClick={() => setShowConfirm(!showConfirm)}>
-                      <i className={`fas fa-eye${showConfirm ? '-slash' : ''}`} />
-                    </button>
-                  </div>
-                  {form.confirmPassword && form.password !== form.confirmPassword && (
-                    <span className="form-error">Passwords don't match</span>
-                  )}
-                </div>
+                )}
                 <div className="form-group consent-group">
                   <label className="consent-label">
                     <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} />
@@ -187,8 +260,8 @@ export default function Register() {
                 </div>
                 <div className="step-buttons">
                   <button type="button" className="btn btn-secondary" onClick={() => setStep(2)}><i className="fas fa-arrow-left" /> Back</button>
-                  <button type="submit" className="btn btn-primary" disabled={loading || form.password.length < 12 || form.password.length > 72 || new TextEncoder().encode(form.password).length > 72 || form.password !== form.confirmPassword || !termsAccepted || !privacyAccepted}>
-                    {loading ? <><span className="spinner spinner-sm" /> Creating...</> : 'Create Account'}
+                  <button type="submit" className="btn btn-primary" disabled={loading || (!googleIdToken && (form.password.length < 12 || form.password.length > 72 || new TextEncoder().encode(form.password).length > 72 || form.password !== form.confirmPassword)) || !termsAccepted || !privacyAccepted}>
+                    {loading ? <><span className="spinner spinner-sm" /> Creating...</> : (googleIdToken ? 'Create Account with Google' : 'Create Account')}
                   </button>
                 </div>
               </div>
