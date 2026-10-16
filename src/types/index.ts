@@ -44,6 +44,8 @@ export interface User {
   roles?: string[]
   isAdmin?: boolean
   idNumber?: string
+  hasIdNumber?: boolean
+  idNumberLastFour?: string
   address?: string
   dateOfBirth?: string
 }
