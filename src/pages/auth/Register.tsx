@@ -4,6 +4,9 @@ import { authApi } from '../../api'
 import './Auth.css'
 
 const STEPS = ['Personal Info', 'Role & Details', 'Security']
+const TERMS_VERSION = 'terms-v1'
+const PRIVACY_VERSION = 'privacy-v1'
+const EMAIL_RE = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/
 
 function extractDobFromId(id: string): string {
   if (id.length < 6) return ''
@@ -24,6 +27,9 @@ export default function Register() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [marketingConsent, setMarketingConsent] = useState(false)
 
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phoneNumber: '',
@@ -35,13 +41,13 @@ export default function Register() {
     setForm(f => ({ ...f, [field]: e.target.value }))
 
   const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value
-    setForm(f => ({ ...f, idNumber: val, dateOfBirth: extractDobFromId(val) }))
+    const digits = e.target.value.replace(/\\D/g, '').slice(0, 13)
+    setForm(f => ({ ...f, idNumber: digits, dateOfBirth: extractDobFromId(digits) }))
   }
 
   const canNext = () => {
-    if (step === 1) return form.firstName && form.lastName && form.email && form.phoneNumber
-    if (step === 2) return form.userType && form.idNumber && form.address
+    if (step === 1) return !!form.firstName.trim() && !!form.lastName.trim() && EMAIL_RE.test(form.email.trim()) && !!form.phoneNumber.trim()
+    if (step === 2) return !!form.userType && /^\\d{13}$/.test(form.idNumber) && !!form.dateOfBirth && !!form.address.trim()
     return false
   }
 
@@ -49,13 +55,21 @@ export default function Register() {
     e.preventDefault()
     if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return }
     setError(''); setLoading(true)
+    if (!termsAccepted || !privacyAccepted) {
+      setError('Please accept the Terms & Conditions and Privacy Policy to create an account.')
+      setLoading(false)
+      return
+    }
     try {
       const res = await authApi.register({
-        firstName: form.firstName, lastName: form.lastName,
-        email: form.email, phoneNumber: form.phoneNumber,
+        firstName: form.firstName.trim(), lastName: form.lastName.trim(),
+        email: form.email.trim().toLowerCase(), phoneNumber: form.phoneNumber.trim(),
         userType: form.userType, idNumber: form.idNumber,
-        dateOfBirth: form.dateOfBirth, address: form.address,
+        dateOfBirth: form.dateOfBirth, address: form.address.trim(),
         password: form.password,
+        termsAccepted, privacyAccepted,
+        termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION,
+        marketingConsent,
       })
       if (res.data.success) {
         const query = returnToTaskId ? `?returnToTaskId=${encodeURIComponent(returnToTaskId)}` : ''
@@ -156,12 +170,12 @@ export default function Register() {
                 <div className="form-group">
                   <div className="input-with-icon password-input">
                     <i className="fas fa-lock" />
-                    <input type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Password *" value={form.password} onChange={set('password')} required minLength={6} />
+                    <input type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Password *" value={form.password} onChange={set('password')} required minLength={12} maxLength={128} autoComplete="new-password" />
                     <button type="button" className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
                       <i className={`fas fa-eye${showPassword ? '-slash' : ''}`} />
                     </button>
                   </div>
-                  <small className="text-muted text-xs">At least 6 characters</small>
+                  <small className="text-muted text-xs">Use 12–128 characters. A unique passphrase is recommended.</small>
                 </div>
                 <div className="form-group">
                   <div className="input-with-icon password-input">
@@ -175,9 +189,23 @@ export default function Register() {
                     <span className="form-error">Passwords don't match</span>
                   )}
                 </div>
+                <div className="form-group consent-group">
+                  <label className="consent-label">
+                    <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} />
+                    <span>I accept the <Link to="/terms" target="_blank" rel="noreferrer">Terms & Conditions</Link>.</span>
+                  </label>
+                  <label className="consent-label">
+                    <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} />
+                    <span>I acknowledge the <Link to="/privacy" target="_blank" rel="noreferrer">Privacy Policy</Link>.</span>
+                  </label>
+                  <label className="consent-label">
+                    <input type="checkbox" checked={marketingConsent} onChange={e => setMarketingConsent(e.target.checked)} />
+                    <span>Send me optional DoForYou product updates and offers.</span>
+                  </label>
+                </div>
                 <div className="step-buttons">
                   <button type="button" className="btn btn-secondary" onClick={() => setStep(2)}><i className="fas fa-arrow-left" /> Back</button>
-                  <button type="submit" className="btn btn-primary" disabled={loading || !form.password || form.password !== form.confirmPassword}>
+                  <button type="submit" className="btn btn-primary" disabled={loading || form.password.length < 12 || form.password.length > 128 || form.password !== form.confirmPassword || !termsAccepted || !privacyAccepted}>
                     {loading ? <><span className="spinner spinner-sm" /> Creating...</> : 'Create Account'}
                   </button>
                 </div>
