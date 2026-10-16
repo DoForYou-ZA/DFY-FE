@@ -34,6 +34,10 @@ export default function Profile() {
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', address: '' })
   const [hasIdNumber, setHasIdNumber] = useState(false)
   const [idNumberLastFour, setIdNumberLastFour] = useState('')
+  const [hasPasswordLogin, setHasPasswordLogin] = useState(true)
+  const [passwordSetupLoading, setPasswordSetupLoading] = useState(false)
+  const [passwordSetupMessage, setPasswordSetupMessage] = useState('')
+  const [passwordSetupError, setPasswordSetupError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
@@ -73,6 +77,7 @@ export default function Profile() {
         setForm({ firstName: d.firstName || '', lastName: d.lastName || '', email: d.email || '', phoneNumber: d.phoneNumber || d.contact || '', userType: d.userType || '', address: d.address || '' })
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
+        setHasPasswordLogin(d.hasPasswordLogin !== false)
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
         setMarketingConsent(!!d.marketingConsent)
@@ -86,6 +91,7 @@ export default function Profile() {
         setForm({ firstName: user.firstName || '', lastName: user.lastName || '', email: user.email || '', phoneNumber: user.phoneNumber || user.contact || '', userType: user.userType || '', address: user.address || '' })
         setHasIdNumber(false)
         setIdNumberLastFour('')
+        setHasPasswordLogin(user.hasPasswordLogin !== false)
         setCompletion(user.profileCompletion ?? 0)
         setMissingProfileFields((user as any).missingProfileFields ?? [])
         setMarketingConsent(!!user.marketingConsent)
@@ -132,6 +138,7 @@ export default function Profile() {
       if (d) {
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
+        setHasPasswordLogin(d.hasPasswordLogin !== false)
         localStorage.setItem('currentUser', JSON.stringify(d))
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
@@ -146,6 +153,21 @@ export default function Profile() {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update profile.')
     } finally { setLoading(false) }
+  }
+
+  const requestPasswordSetup = async () => {
+    setPasswordSetupLoading(true)
+    setPasswordSetupMessage('')
+    setPasswordSetupError('')
+    try {
+      const response = await authApi.forgotPassword(form.email.trim().toLowerCase())
+      setPasswordSetupMessage(response.data?.message || 'If an account matches that email, password reset instructions will be sent shortly.')
+    } catch {
+      // Keep the response neutral: never confirm account existence through the UI.
+      setPasswordSetupMessage('If an account matches that email, password reset instructions will be sent shortly.')
+    } finally {
+      setPasswordSetupLoading(false)
+    }
   }
 
   const handleMarketingConsentChange = async (enabled: boolean) => {
@@ -462,6 +484,9 @@ export default function Profile() {
 
           <div className="section-card">
             <div className="section-header"><h2><i className="fas fa-lock" /> Change Password</h2></div>
+            {hasPasswordLogin ? (
+              <>
+
             {pwSuccess && <div className="alert alert-success mb-4"><i className="fas fa-check-circle" /> {pwSuccess}</div>}
             {pwError && <div className="alert alert-error mb-4"><i className="fas fa-exclamation-circle" /> {pwError}</div>}
             <form onSubmit={handlePwChange}>
@@ -490,6 +515,17 @@ export default function Profile() {
               </div>
               <button type="submit" className="btn btn-primary" disabled={pwLoading}>{pwLoading ? 'Changing...' : 'Change Password'}</button>
             </form>
+              </>
+            ) : (
+              <>
+                <p className="text-muted text-sm">This account uses Google sign-in and does not currently have a password sign-in method. You can add one by requesting a password setup link sent to your verified email address.</p>
+                {passwordSetupMessage && <div className="alert alert-info mb-3" role="status">{passwordSetupMessage}</div>}
+                {passwordSetupError && <div className="alert alert-error mb-3" role="alert">{passwordSetupError}</div>}
+                <button type="button" className="btn btn-primary" onClick={() => { void requestPasswordSetup() }} disabled={passwordSetupLoading}>
+                  {passwordSetupLoading ? 'Sending…' : 'Email password setup link'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
