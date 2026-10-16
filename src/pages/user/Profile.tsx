@@ -27,9 +27,30 @@ const USER_TYPES = [
   },
 ]
 
+function deriveDobFromId(id: string): string {
+  if (!/^\d{6}/.test(id)) return ''
+  const yy = Number(id.slice(0, 2))
+  const month = Number(id.slice(2, 4))
+  const day = Number(id.slice(4, 6))
+  const today = new Date()
+  const century = Math.floor(today.getFullYear() / 100) * 100
+  for (const year of [century + yy, century + yy - 100]) {
+    const date = new Date(Date.UTC(year, month - 1, day))
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return ''
+    let age = today.getUTCFullYear() - year
+    if (today.getUTCMonth() < month - 1 || (today.getUTCMonth() === month - 1 && today.getUTCDate() < day)) age--
+    if (age >= 18 && age <= 110 && date.getTime() <= Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())) {
+      return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0')
+    }
+  }
+  return ''
+}
+
 export default function Profile() {
   const { user, refreshUser } = useAuth()
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', idNumber: '', address: '', dateOfBirth: '' })
+  const [hasIdNumber, setHasIdNumber] = useState(false)
+  const [idNumberLastFour, setIdNumberLastFour] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState('')
   const [error, setError] = useState('')
@@ -47,13 +68,20 @@ export default function Profile() {
     authApi.getProfile().then(r => {
       const d = r.data?.data || r.data
       if (d) {
-        setForm({ firstName: d.firstName || '', lastName: d.lastName || '', email: d.email || '', phoneNumber: d.phoneNumber || d.contact || '', userType: d.userType || '', idNumber: d.idNumber || '', address: d.address || '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : '' })
+        setForm({ firstName: d.firstName || '', lastName: d.lastName || '', email: d.email || '', phoneNumber: d.phoneNumber || d.contact || '', userType: d.userType || '', idNumber: '', address: d.address || '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : '' })
+        setHasIdNumber(!!d.hasIdNumber)
+        setIdNumberLastFour(d.idNumberLastFour || '')
+        setForm(prev => ({ ...prev, idNumber: '' }))
+        setHasIdNumber(!!d.hasIdNumber)
+        setIdNumberLastFour(d.idNumberLastFour || '')
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
       }
     }).catch(() => {
       if (user) {
-        setForm({ firstName: user.firstName || '', lastName: user.lastName || '', email: user.email || '', phoneNumber: user.phoneNumber || user.contact || '', userType: user.userType || '', idNumber: user.idNumber || '', address: user.address || '', dateOfBirth: '' })
+        setForm({ firstName: user.firstName || '', lastName: user.lastName || '', email: user.email || '', phoneNumber: user.phoneNumber || user.contact || '', userType: user.userType || '', idNumber: '', address: user.address || '', dateOfBirth: '' })
+        setHasIdNumber(false)
+        setIdNumberLastFour('')
         setCompletion(user.profileCompletion ?? 0)
         setMissingProfileFields((user as any).missingProfileFields ?? [])
       }
@@ -63,18 +91,8 @@ export default function Profile() {
   const set = (f: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(prev => ({ ...prev, [f]: e.target.value }))
 
   const handleIdNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const id = e.target.value.replace(/\D/g, '').substring(0, 13)
-    const updates: any = { idNumber: id }
-    if (id.length === 13) {
-      const yy = id.substring(0, 2)
-      const mm = id.substring(2, 4)
-      const dd = id.substring(4, 6)
-      const year = parseInt(yy) <= new Date().getFullYear() % 100 ? `20${yy}` : `19${yy}`
-      const dob = `${year}-${mm}-${dd}`
-      const date = new Date(dob)
-      if (!isNaN(date.getTime())) updates.dateOfBirth = dob
-    }
-    setForm(prev => ({ ...prev, ...updates }))
+    const id = e.target.value.replace(/\D/g, '').slice(0, 13)
+    setForm(prev => ({ ...prev, idNumber: id, dateOfBirth: deriveDobFromId(id) }))
   }
 
   const handleSave = async (e: React.FormEvent) => {
@@ -89,8 +107,8 @@ export default function Profile() {
       setLoading(false)
       return
     }
-    if (form.idNumber.length !== 13) {
-      setError('ID number must be 13 digits.')
+    if ((form.idNumber.trim() && form.idNumber.length !== 13) || (!form.idNumber.trim() && !hasIdNumber)) {
+      setError('Enter a valid 13-digit South African ID number, or leave it blank to keep the ID already on file.')
       setLoading(false)
       return
     }
@@ -113,7 +131,7 @@ export default function Profile() {
 
   const handlePwChange = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (pwForm.newPassword.length < 8) { setPwError('New password must be at least 8 characters.'); return }
+    if (pwForm.newPassword.length < 12 || pwForm.newPassword.length > 72 || new TextEncoder().encode(pwForm.newPassword).length > 72) { setPwError('Use at least 12 characters and no more than 72 UTF-8 bytes.'); return }
     if (pwForm.newPassword !== pwForm.confirmPassword) { setPwError('Passwords do not match'); return }
     setPwLoading(true); setPwError(''); setPwSuccess('')
     try {
@@ -193,8 +211,8 @@ export default function Profile() {
                 <div className="form-group"><label className="form-label">Phone Number</label><input type="tel" className="form-input" value={form.phoneNumber} onChange={set('phoneNumber')} /></div>
               </div>
               <div className="form-row-2">
-                <div className="form-group"><label className="form-label">ID Number</label><input className="form-input" value={form.idNumber} onChange={handleIdNumber} maxLength={13} /></div>
-                <div className="form-group"><label className="form-label">Date of Birth</label><input type="date" className="form-input" value={form.dateOfBirth} onChange={set('dateOfBirth')} /></div>
+                <div className="form-group"><label className="form-label">South African ID Number</label>{hasIdNumber && <small className="text-muted">ID securely on file ending {idNumberLastFour}. Leave blank to keep it, or enter a new ID to replace it.</small>}<input className="form-input" value={form.idNumber} onChange={handleIdNumber} maxLength={13} autoComplete="off" placeholder={hasIdNumber ? "Leave blank to keep the ID on file" : "Enter 13-digit South African ID"} /></div>
+                <div className="form-group"><label className="form-label">Date of Birth</label><input type="date" className="form-input" value={form.dateOfBirth} readOnly /></div>
               </div>
               <div className="form-group"><label className="form-label">Address</label><input className="form-input" value={form.address} onChange={set('address')} /></div>
               <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? <><span className="spinner spinner-sm" /> Saving...</> : <><i className="fas fa-save" /> Save Changes</>}</button>
