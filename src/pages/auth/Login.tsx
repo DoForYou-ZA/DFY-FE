@@ -26,7 +26,7 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      const loggedInUser = await login(email, password)
+      const loggedInUser = await login(email.trim().toLowerCase(), password)
       sessionStorage.removeItem('dfy:loggedOut')
       const isAdminUser = !!loggedInUser?.isAdmin || !!loggedInUser?.roles?.includes('Admin') || loggedInUser?.userType === 'Admin'
       // Admins must never inherit a creator/runner return route such as /dashboard.
