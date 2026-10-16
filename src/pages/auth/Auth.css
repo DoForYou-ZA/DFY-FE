@@ -350,3 +350,16 @@
   accent-color: #e87500;
 }
 .auth-form-side .consent-label a { color: #c85b00; font-weight: 700; }
+
+.auth-link-button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: #c85b00;
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.auth-link-button:disabled { cursor: wait; opacity: 0.65; }
