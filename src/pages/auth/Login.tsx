@@ -26,7 +26,7 @@ export default function Login() {
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
   const [secondFactorCode, setSecondFactorCode] = useState('')
   const [pendingGoogleToken, setPendingGoogleToken] = useState<string | null>(null)
-  const [notice, setNotice = useState(authState?.registered ? 'Account created. Check your inbox for the verification link before signing in.' : authState?.passwordChanged ? 'Password changed successfully. Sign in with your new password.' : '')
+  const [notice, setNotice] = useState(authState?.registered ? 'Account created. Check your inbox for the verification link before signing in.' : authState?.passwordChanged ? 'Password changed successfully. Sign in with your new password.' : '')
 
   const finishSignIn = (loggedInUser: any) => {
     sessionStorage.removeItem('dfy:loggedOut')
