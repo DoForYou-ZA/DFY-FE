@@ -11,6 +11,7 @@ export default function VerifyEmail() {
 
   useEffect(() => {
     if (!token) return
+    window.history.replaceState(window.history.state, '', window.location.pathname)
     let active = true
     authApi.verifyEmail(token).then((response) => {
       if (!active) return
