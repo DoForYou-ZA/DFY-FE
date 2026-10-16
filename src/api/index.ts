@@ -9,6 +9,12 @@ export const publicApi = {
 
 export const authApi = {
   login: (data: LoginModel) => api.post<AuthResponse>('/auth/login', data),
+  googleLogin: (idToken: string, secondFactorCode?: string) => api.post<AuthResponse>('/auth/google', { idToken, secondFactorCode }),
+  googleRegister: (data: import('../types').GoogleRegisterModel) => api.post<AuthResponse>('/auth/google/register', data),
+  getTwoFactorStatus: () => api.get('/auth/two-factor/status'),
+  setupTwoFactor: (data: { currentPassword?: string }) => api.post('/auth/two-factor/setup', data),
+  confirmTwoFactor: (code: string) => api.post('/auth/two-factor/confirm', { code }),
+  disableTwoFactor: (data: { currentPassword?: string; code: string }) => api.post('/auth/two-factor/disable', data),
   refresh: () => api.post<AuthResponse>('/auth/refresh'),
   register: (data: RegisterModel) => api.post<AuthResponse>('/auth/register', data),
   verifyEmail: (token: string) => api.post('/auth/verify-email', { token }),
