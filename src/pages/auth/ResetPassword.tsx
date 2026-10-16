@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { authApi } from '../../api'
 import './Auth.css'
@@ -11,6 +11,10 @@ export default function ResetPassword() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (token) window.history.replaceState(window.history.state, '', window.location.pathname)
+  }, [token])
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
