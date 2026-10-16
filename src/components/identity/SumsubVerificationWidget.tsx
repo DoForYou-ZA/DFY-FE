@@ -69,9 +69,10 @@ export default function SumsubVerificationWidget({
       setError('')
       try {
         const tokenResponse = await identityVerificationApi.exchange(handoffCode)
-        const response = tokenResponse.data?.data || tokenResponse.data
-        if (!response?.success || !response?.accessToken) {
-          throw new Error(response?.message || 'A verification session could not be opened.')
+        const apiBody = tokenResponse.data
+        const response = apiBody?.data || apiBody
+        if (apiBody?.success === false || !response?.accessToken) {
+          throw new Error(apiBody?.message || response?.message || 'A verification session could not be opened.')
         }
 
         await loadSumsubSdk()
