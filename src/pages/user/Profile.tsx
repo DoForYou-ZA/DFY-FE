@@ -50,6 +50,17 @@ export default function Profile() {
   const [authenticatorTwoFactorEnabled, setAuthenticatorTwoFactorEnabled] = useState(false)
   const [canAcceptTasks, setCanAcceptTasks] = useState(false)
   const [hasVerifiedPayoutAccount, setHasVerifiedPayoutAccount] = useState(false)
+  const [totpEnabled, setTotpEnabled] = useState(false)
+  const [totpConfigured, setTotpConfigured] = useState(false)
+  const [totpRemainingCodes, setTotpRemainingCodes] = useState(0)
+  const [totpSecret, setTotpSecret] = useState('')
+  const [totpProvisioningUri, setTotpProvisioningUri] = useState('')
+  const [totpCurrentPassword, setTotpCurrentPassword] = useState('')
+  const [totpCode, setTotpCode] = useState('')
+  const [totpRecoveryCodes, setTotpRecoveryCodes] = useState<string[]>([])
+  const [totpLoading, setTotpLoading] = useState(false)
+  const [totpMessage, setTotpMessage] = useState('')
+  const [totpError, setTotpError] = useState('')
 
   useEffect(() => {
     authApi.getProfile().then(r => {
@@ -79,6 +90,19 @@ export default function Profile() {
       }
     })
   }, [user])
+
+  useEffect(() => {
+    authApi.getTwoFactorStatus().then(response => {
+      const data = response.data?.data || response.data
+      if (data) {
+        setTotpEnabled(!!data.enabled)
+        setTotpRemainingCodes(Number(data.remainingRecoveryCodes || 0))
+        setTotpConfigured(!!data.encryptionConfigured)
+      }
+    }).catch(() => {
+      setTotpConfigured(false)
+    })
+  }, [])
 
   const set = (f: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(prev => ({ ...prev, [f]: e.target.value }))
 
@@ -131,6 +155,60 @@ export default function Profile() {
     } catch (err: any) {
       setPwError(err.response?.data?.message || 'Failed to change password.')
     } finally { setPwLoading(false) }
+  }
+
+  const handleTotpSetup = async () => {
+    setTotpLoading(true); setTotpError(''); setTotpMessage('')
+    try {
+      const response = await authApi.setupTwoFactor({ currentPassword: totpCurrentPassword || undefined })
+      const data = response.data?.data || response.data
+      setTotpSecret(data.secret || '')
+      setTotpProvisioningUri(data.provisioningUri || '')
+      setTotpCode('')
+      setTotpMessage('Add this key to your authenticator app, then enter a current six-digit code to enable it.')
+    } catch (err: any) {
+      setTotpError(err.response?.data?.message || 'Authenticator setup could not start.')
+    } finally { setTotpLoading(false) }
+  }
+
+  const handleTotpConfirm = async () => {
+    setTotpLoading(true); setTotpError(''); setTotpMessage('')
+    try {
+      const response = await authApi.confirmTwoFactor(totpCode.trim())
+      const data = response.data?.data || response.data
+      setTotpEnabled(true)
+      setTotpRecoveryCodes(Array.isArray(data.recoveryCodes) ? data.recoveryCodes : [])
+      setTotpRemainingCodes(Array.isArray(data.recoveryCodes) ? data.recoveryCodes.length : 0)
+      setTotpSecret('')
+      setTotpProvisioningUri('')
+      setTotpCurrentPassword('')
+      setTotpCode('')
+      setTotpMessage('Authenticator enabled. Save the recovery codes below now; they cannot be retrieved later.')
+      refreshUser()
+    } catch (err: any) {
+      setTotpError(err.response?.data?.message || 'The authenticator code could not be confirmed.')
+    } finally { setTotpLoading(false) }
+  }
+
+  const handleTotpDisable = async () => {
+    setTotpLoading(true); setTotpError(''); setTotpMessage('')
+    try {
+      await authApi.disableTwoFactor({ currentPassword: totpCurrentPassword || undefined, code: totpCode.trim() })
+      setTotpEnabled(false)
+      setTotpRemainingCodes(0)
+      setTotpCurrentPassword('')
+      setTotpCode('')
+      setTotpRecoveryCodes([])
+      setTotpMessage('Authenticator disabled. Sign out and sign in again to refresh the session.')
+    } catch (err: any) {
+      setTotpError(err.response?.data?.message || 'Authenticator could not be disabled.')
+    } finally { setTotpLoading(false) }
+  }
+
+  const finishTotpSession = () => {
+    setTotpRecoveryCodes([])
+    logout()
+    navigate('/login', { replace: true, state: { twoFactorUpdated: true } })
   }
 
   const handleUserTypeChange = async (value: string) => {
@@ -246,6 +324,72 @@ export default function Profile() {
                 <p className="text-sm" style={{ margin: '.4rem 0' }}>Payout account: {hasVerifiedPayoutAccount ? 'bank recipient verified' : 'not verified'}.</p>
                 <p className="text-sm" style={{ margin: '.4rem 0' }}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance remains locked until identity verification and authenticator 2FA are completed. Those setup flows are not yet available in staging.'}</p>
               </div>
+            )}
+          </div>
+
+          <div className="section-card">
+            <div className="section-header"><h2><i className="fas fa-shield-alt" /> Authenticator security</h2></div>
+            {totpError && <div className="alert alert-error mb-3" role="alert">{totpError}</div>}
+            {totpMessage && <div className="alert alert-info mb-3" role="status">{totpMessage}</div>}
+            <p className="text-muted text-sm">
+              Use an authenticator app to generate sign-in codes. Recovery codes are one-time backups. Enabling or disabling the authenticator invalidates existing sessions.
+            </p>
+            {totpRecoveryCodes.length > 0 && (
+              <div className="alert alert-warning" role="status">
+                <strong>Save these recovery codes now</strong>
+                <p className="text-sm">Each code works once. They are not stored in readable form and cannot be displayed again.</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '.5rem', margin: '.75rem 0' }}>
+                  {totpRecoveryCodes.map(code => <code key={code} style={{ background: '#fff', padding: '.4rem', borderRadius: '.25rem' }}>{code}</code>)}
+                </div>
+                <button type="button" className="btn btn-primary" onClick={finishTotpSession}>I've saved my codes — sign out</button>
+              </div>
+            )}
+            {!totpConfigured && <p className="text-muted text-sm">Authenticator enrollment is disabled on this staging API until its encryption key is configured.</p>}
+            {totpConfigured && !totpEnabled && !totpSecret && (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Current password (password accounts)</label>
+                  <input type="password" className="form-input" value={totpCurrentPassword} onChange={e => setTotpCurrentPassword(e.target.value)} autoComplete="current-password" />
+                  <small className="text-muted text-xs">Google sign-in accounts can start enrollment after signing in within the last ten minutes.</small>
+                </div>
+                <button type="button" className="btn btn-primary" onClick={handleTotpSetup} disabled={totpLoading}>
+                  {totpLoading ? 'Starting…' : 'Set up authenticator'}
+                </button>
+              </>
+            )}
+            {totpConfigured && !totpEnabled && !!totpSecret && (
+              <>
+                <div className="form-group">
+                  <label className="form-label">Authenticator setup key</label>
+                  <code className="form-input" style={{ display: 'block', overflowWrap: 'anywhere' }}>{totpSecret}</code>
+                  <small className="text-muted text-xs">In your authenticator app, choose “enter setup key” and type this key. Do not share it.</small>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Six-digit code</label>
+                  <input className="form-input" value={totpCode} onChange={e => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} />
+                </div>
+                <button type="button" className="btn btn-primary" onClick={handleTotpConfirm} disabled={totpLoading || totpCode.length !== 6}>
+                  {totpLoading ? 'Confirming…' : 'Confirm and enable'}
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => { setTotpSecret(''); setTotpProvisioningUri(''); setTotpCode('') }} style={{ marginLeft: '.5rem' }}>Cancel setup</button>
+                <details style={{ marginTop: '.75rem' }}><summary className="text-sm">Provisioning URI (advanced)</summary><code style={{ display: 'block', overflowWrap: 'anywhere' }}>{totpProvisioningUri}</code></details>
+              </>
+            )}
+            {totpConfigured && totpEnabled && totpRecoveryCodes.length === 0 && (
+              <>
+                <p className="text-sm">Authenticator is enabled. Remaining recovery codes: {totpRemainingCodes}.</p>
+                <div className="form-group">
+                  <label className="form-label">Current password (password accounts)</label>
+                  <input type="password" className="form-input" value={totpCurrentPassword} onChange={e => setTotpCurrentPassword(e.target.value)} autoComplete="current-password" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Authenticator or recovery code</label>
+                  <input className="form-input" value={totpCode} onChange={e => setTotpCode(e.target.value)} autoComplete="one-time-code" maxLength={20} />
+                </div>
+                <button type="button" className="btn btn-secondary" onClick={handleTotpDisable} disabled={totpLoading || !totpCode.trim()}>
+                  {totpLoading ? 'Disabling…' : 'Disable authenticator'}
+                </button>
+              </>
             )}
           </div>
 
