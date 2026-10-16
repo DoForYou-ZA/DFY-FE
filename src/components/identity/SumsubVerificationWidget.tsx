@@ -26,7 +26,7 @@ function loadSumsubSdk(): Promise<void> {
   if (window.snsWebSdk) return Promise.resolve()
   if (sdkScriptPromise) return sdkScriptPromise
 
-  sdkScriptPromise = new Promise((resolve, reject) => {
+  const scriptPromise = new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>(`script[src="${SUMSUB_WEBSDK_SCRIPT}"]`)
     const script = existing || document.createElement('script')
     script.src = SUMSUB_WEBSDK_SCRIPT
@@ -34,12 +34,13 @@ function loadSumsubSdk(): Promise<void> {
     script.onload = () => window.snsWebSdk ? resolve() : reject(new Error('Verification widget failed to initialize.'))
     script.onerror = () => reject(new Error('The verification widget could not be loaded. Check your connection and try again.'))
     if (!existing) document.head.appendChild(script)
-  }).catch(error => {
+  }).catch((error: unknown): never => {
     sdkScriptPromise = null
     throw error
   })
+  sdkScriptPromise = scriptPromise
 
-  return sdkScriptPromise
+  return scriptPromise
 }
 
 export interface SumsubVerificationWidgetProps {
