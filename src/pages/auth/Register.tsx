@@ -72,7 +72,7 @@ export default function Register() {
 
   const canNext = () => {
     if (step === 1) return !!form.firstName.trim() && !!form.lastName.trim() && EMAIL_RE.test(form.email.trim()) && !!form.phoneNumber.trim()
-    if (step === 2) return !!form.userType && /^\d{13}$/.test(form.idNumber) && !!form.dateOfBirth && !!form.address.trim()
+    if (step === 2) return !!form.userType && isValidSouthAfricanId(form.idNumber) && !!form.dateOfBirth && !!form.address.trim()
     return false
   }
 
