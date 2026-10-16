@@ -28,29 +28,10 @@ const USER_TYPES = [
   },
 ]
 
-function deriveDobFromId(id: string): string {
-  if (!/^\d{6}/.test(id)) return ''
-  const yy = Number(id.slice(0, 2))
-  const month = Number(id.slice(2, 4))
-  const day = Number(id.slice(4, 6))
-  const today = new Date()
-  const century = Math.floor(today.getFullYear() / 100) * 100
-  for (const year of [century + yy, century + yy - 100]) {
-    const date = new Date(Date.UTC(year, month - 1, day))
-    if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return ''
-    let age = today.getUTCFullYear() - year
-    if (today.getUTCMonth() < month - 1 || (today.getUTCMonth() === month - 1 && today.getUTCDate() < day)) age--
-    if (age >= 18 && age <= 110 && date.getTime() <= Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())) {
-      return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0')
-    }
-  }
-  return ''
-}
-
 export default function Profile() {
   const { user, refreshUser, logout } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', idNumber: '', address: '', dateOfBirth: '' })
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', address: '' })
   const [hasIdNumber, setHasIdNumber] = useState(false)
   const [idNumberLastFour, setIdNumberLastFour] = useState('')
   const [loading, setLoading] = useState(false)
@@ -74,7 +55,7 @@ export default function Profile() {
     authApi.getProfile().then(r => {
       const d = r.data?.data || r.data
       if (d) {
-        setForm({ firstName: d.firstName || '', lastName: d.lastName || '', email: d.email || '', phoneNumber: d.phoneNumber || d.contact || '', userType: d.userType || '', idNumber: '', address: d.address || '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : '' })
+        setForm({ firstName: d.firstName || '', lastName: d.lastName || '', email: d.email || '', phoneNumber: d.phoneNumber || d.contact || '', userType: d.userType || '', address: d.address || '' })
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
         setCompletion(d.profileCompletion ?? 0)
@@ -86,7 +67,7 @@ export default function Profile() {
       }
     }).catch(() => {
       if (user) {
-        setForm({ firstName: user.firstName || '', lastName: user.lastName || '', email: user.email || '', phoneNumber: user.phoneNumber || user.contact || '', userType: user.userType || '', idNumber: '', address: user.address || '', dateOfBirth: '' })
+        setForm({ firstName: user.firstName || '', lastName: user.lastName || '', email: user.email || '', phoneNumber: user.phoneNumber || user.contact || '', userType: user.userType || '', address: user.address || '' })
         setHasIdNumber(false)
         setIdNumberLastFour('')
         setCompletion(user.profileCompletion ?? 0)
@@ -101,11 +82,6 @@ export default function Profile() {
 
   const set = (f: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(prev => ({ ...prev, [f]: e.target.value }))
 
-  const handleIdNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const id = e.target.value.replace(/\D/g, '').slice(0, 13)
-    setForm(prev => ({ ...prev, idNumber: id, dateOfBirth: deriveDobFromId(id) }))
-  }
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError(''); setSuccess('')
     if (!/^0(6|7|8)\d{8}$/.test(form.phoneNumber.replace(/\s/g, ''))) {
@@ -118,18 +94,12 @@ export default function Profile() {
       setLoading(false)
       return
     }
-    if (form.idNumber.trim() && form.idNumber.length !== 13) {
-      setError('Enter a valid 13-digit South African ID number, or leave the field blank.')
-      setLoading(false)
-      return
-    }
     try {
       const res = await authApi.updateProfile(form)
       if (res.data?.success === false) { setError(res.data?.message || 'Failed to update profile.'); return }
       const r = await authApi.getProfile()
       const d = r.data?.data || r.data
       if (d) {
-        setForm(prev => ({ ...prev, idNumber: '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : prev.dateOfBirth }))
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
         localStorage.setItem('currentUser', JSON.stringify(d))
@@ -230,17 +200,12 @@ export default function Profile() {
                 <div className="form-group"><label className="form-label">Phone Number</label><input type="tel" className="form-input" value={form.phoneNumber} onChange={set('phoneNumber')} /></div>
               </div>
               {(form.userType === 'runner' || form.userType === 'both') && (
-                <>
-                  <div className="form-row-2">
-                    <div className="form-group">
-                      <label className="form-label">Runner identity ID</label>
-                      {hasIdNumber && <small className="text-muted">ID on file ending {idNumberLastFour}. Leave blank to keep it, or enter a replacement.</small>}
-                      <input className="form-input" value={form.idNumber} onChange={handleIdNumber} maxLength={13} autoComplete="off" placeholder={hasIdNumber ? "Leave blank to keep the ID on file" : "Enter 13-digit South African ID"} />
-                    </div>
-                    <div className="form-group"><label className="form-label">Date of Birth</label><input type="date" className="form-input" value={form.dateOfBirth} readOnly /></div>
-                  </div>
-                  <p className="text-muted text-sm">A valid ID format is not identity verification. Runner acceptance remains locked until identity/liveness checks and authenticator-based 2FA are completed.</p>
-                </>
+                <div className="alert alert-info mt-3" role="status">
+                  {hasIdNumber
+                    ? <p className="text-sm">An ID number is already on file ending {idNumberLastFour}. Do not send identity documents through this profile form.</p>
+                    : <p className="text-sm">Runner identity information will be collected through the dedicated verification flow once the verification provider and data protection controls are configured.</p>}
+                  <p className="text-sm" style={{ marginBottom: 0 }}>A valid ID format is not identity verification. Runner acceptance remains locked until identity/liveness checks and authenticator-based 2FA are completed.</p>
+                </div>
               )}
               <div className="form-group"><label className="form-label">Address</label><input className="form-input" value={form.address} onChange={set('address')} /></div>
               <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? <><span className="spinner spinner-sm" /> Saving...</> : <><i className="fas fa-save" /> Save Changes</>}</button>
