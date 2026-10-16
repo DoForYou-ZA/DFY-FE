@@ -21,8 +21,7 @@ export default function UserDashboardShell({ children }: UserDashboardShellProps
   const isCreator = type === 'creator' || type === 'both'
   const isRunner = type === 'runner' || type === 'both'
   const roleLabel = isRunner && isCreator ? 'Creator & Runner' : isRunner ? 'Runner' : 'Creator'
-  const { notifications } = useNotifications()
-  const unreadNotifications = notifications.filter(n => !n.isRead).length
+  const { unreadCount: unreadNotifications } = useNotifications()
   const unreadMessages = conversationUnreadCount
   useEffect(() => {
     let active = true
@@ -43,7 +42,7 @@ export default function UserDashboardShell({ children }: UserDashboardShellProps
       setCompletedCount(Number(data?.count ?? (Array.isArray(data) ? data.length : 0)))
     }).catch(() => {})
     return () => { active = false }
-  }, [isCreator, isRunner])
+  }, [isCreator, isRunner, location.pathname])
 
   const navigation = [
     { label: 'Overview', to: '/dashboard', icon: 'fa-chart-pie', show: true, section: 'WORKSPACE' },

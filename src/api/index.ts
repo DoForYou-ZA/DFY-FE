@@ -137,6 +137,7 @@ export const userPreferencesApi = {
 }
 
 export const notificationsApi = {
+  getUnreadCount: () => api.get('/notifications/unread-count'),
   getAll: (page = 1, pageSize = 20, type?: string, unreadOnly?: boolean) => {
     const params: any = { page, pageSize }
     if (type) params.type = type
