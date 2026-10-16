@@ -329,7 +329,7 @@ export default function BankAccounts() {
                   <label className="form-label" htmlFor="payout-step-up-password">Current password</label>
                   <input id="payout-step-up-password" className="form-input" type="password" autoComplete="current-password" value={stepUpPassword} onChange={event => setStepUpPassword(event.target.value)} required disabled={stepUpLoading} />
                 </div>
-                <button type="submit" className="btn btn-primary" disabled={stepUpLoading || !stepUpPassword}>
+                <button type="submit" className="btn btn-primary" disabled={stepUpLoading || !stepUpPassword || !!profileSecurity?.authenticatorTwoFactorEnabled && !stepUpCode.trim()}>
                   {stepUpLoading ? 'Verifying…' : 'Verify and continue'}
                 </button>
               </form>
@@ -432,7 +432,7 @@ export default function BankAccounts() {
                     <div>
                       <strong>{account.bankName}</strong>
                       <span>{account.accountHolderName} · {account.accountType}</span>
-                      <small>Account {account.accountNumber}</small>
+                      <small>Account ending {account.accountNumber.slice(-4)}</small>
                     </div>
                   </div>
                   <div className="bank-account-row-actions">
