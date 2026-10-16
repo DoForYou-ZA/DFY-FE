@@ -29,7 +29,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session] = useState(() => {
     const storedToken = localStorage.getItem('token')
     const storedUser = localStorage.getItem('currentUser')
-    if (!storedToken || !storedUser) return { token: null as string | null, user: null as User | null }
+    if (!storedToken || !storedUser) {
+      if (!storedToken) {
+        localStorage.removeItem('currentUser')
+        localStorage.removeItem('refreshToken')
+      }
+      return { token: null as string | null, user: null as User | null }
+    }
     try {
       const parsed = JSON.parse(storedUser) as User
       const { idNumber: _legacyIdNumber, ...safeUser } = parsed as any
