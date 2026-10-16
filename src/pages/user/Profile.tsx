@@ -171,6 +171,22 @@ export default function Profile() {
     } finally { setTotpLoading(false) }
   }
 
+  const handleTotpCancel = async () => {
+    setTotpLoading(true); setTotpError(''); setTotpMessage('')
+    try {
+      await authApi.cancelTwoFactorSetup()
+      setTotpSecret('')
+      setTotpProvisioningUri('')
+      setTotpCode('')
+      setTotpMessage('Authenticator setup cancelled.')
+    } catch (err: any) {
+      setTotpError(err.response?.data?.message || 'Setup could not be cancelled on the server. The pending setup expires automatically.')
+      setTotpSecret('')
+      setTotpProvisioningUri('')
+      setTotpCode('')
+    } finally { setTotpLoading(false) }
+  }
+
   const handleTotpConfirm = async () => {
     setTotpLoading(true); setTotpError(''); setTotpMessage('')
     try {
@@ -184,7 +200,6 @@ export default function Profile() {
       setTotpCurrentPassword('')
       setTotpCode('')
       setTotpMessage('Authenticator enabled. Save the recovery codes below now; they cannot be retrieved later.')
-      refreshUser()
     } catch (err: any) {
       setTotpError(err.response?.data?.message || 'The authenticator code could not be confirmed.')
     } finally { setTotpLoading(false) }
@@ -199,7 +214,7 @@ export default function Profile() {
       setTotpCurrentPassword('')
       setTotpCode('')
       setTotpRecoveryCodes([])
-      setTotpMessage('Authenticator disabled. Sign out and sign in again to refresh the session.')
+      setTotpMessage('Authenticator disabled. Signing out so you can sign in again.')
     } catch (err: any) {
       setTotpError(err.response?.data?.message || 'Authenticator could not be disabled.')
     } finally { setTotpLoading(false) }
@@ -371,7 +386,7 @@ export default function Profile() {
                 <button type="button" className="btn btn-primary" onClick={handleTotpConfirm} disabled={totpLoading || totpCode.length !== 6}>
                   {totpLoading ? 'Confirming…' : 'Confirm and enable'}
                 </button>
-                <button type="button" className="btn btn-secondary" onClick={() => { setTotpSecret(''); setTotpProvisioningUri(''); setTotpCode('') }} style={{ marginLeft: '.5rem' }}>Cancel setup</button>
+                <button type="button" className="btn btn-secondary" onClick={handleTotpCancel} disabled={totpLoading} style={{ marginLeft: '.5rem' }}>Cancel setup</button>
                 <details style={{ marginTop: '.75rem' }}><summary className="text-sm">Provisioning URI (advanced)</summary><code style={{ display: 'block', overflowWrap: 'anywhere' }}>{totpProvisioningUri}</code></details>
               </>
             )}
