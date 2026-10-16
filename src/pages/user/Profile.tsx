@@ -366,7 +366,7 @@ export default function Profile() {
                 <p className="text-sm" style={{ margin: '.4rem 0' }}>Identity check: {identityVerificationStatus.replace(/_/g, ' ')}.</p>
                 <p className="text-sm" style={{ margin: '.4rem 0' }}>Authenticator 2FA: {authenticatorTwoFactorEnabled ? 'enabled' : 'not enabled'}.</p>
                 <p className="text-sm" style={{ margin: '.4rem 0' }}>Payout account: {hasVerifiedPayoutAccount ? 'bank recipient verified' : 'not verified'}.</p>
-                <p className="text-sm" style={{ margin: '.4rem 0' }}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance remains locked until identity verification and authenticator 2FA are completed. Those setup flows are not yet available in staging.'}</p>
+                <p className="text-sm" style={{ margin: '.4rem 0' }}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Authenticator 2FA can be configured below. Task acceptance remains locked until a verified identity/liveness provider reports a passed result; no identity provider is configured for this staging release.'}</p>
               </div>
             )}
           </div>
