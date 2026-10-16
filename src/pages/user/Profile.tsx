@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { authApi, userPreferencesApi } from '../../api'
+import { authApi, identityVerificationApi, userPreferencesApi } from '../../api'
+import SumsubVerificationWidget from '../../components/identity/SumsubVerificationWidget'
 import './Profile.css'
+
+const IDENTITY_VERIFICATION_CONSENT_VERSION = 'identity-verification-v1'
 
 const USER_TYPES = [
   {
@@ -55,6 +58,12 @@ export default function Profile() {
   const [marketingConsentMessage, setMarketingConsentMessage] = useState('')
   const [marketingConsentError, setMarketingConsentError] = useState('')
   const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_started')
+  const [identityProviderConfigured, setIdentityProviderConfigured] = useState(false)
+  const [identityAttemptsRemaining, setIdentityAttemptsRemaining] = useState(0)
+  const [identityConsentAccepted, setIdentityConsentAccepted] = useState(false)
+  const [identitySessionCode, setIdentitySessionCode] = useState('')
+  const [identitySessionLoading, setIdentitySessionLoading] = useState(false)
+  const [identitySessionError, setIdentitySessionError] = useState('')
   const [authenticatorTwoFactorEnabled, setAuthenticatorTwoFactorEnabled] = useState(false)
   const [canAcceptTasks, setCanAcceptTasks] = useState(false)
   const [hasVerifiedPayoutAccount, setHasVerifiedPayoutAccount] = useState(false)
@@ -102,6 +111,19 @@ export default function Profile() {
       }
     })
   }, [user])
+
+  useEffect(() => {
+    identityVerificationApi.getStatus().then(response => {
+      const data = response.data?.data || response.data
+      if (data) {
+        setIdentityProviderConfigured(!!data.configured)
+        setIdentityAttemptsRemaining(Number(data.attemptsRemaining ?? 0))
+      }
+    }).catch(() => {
+      setIdentityProviderConfigured(false)
+      setIdentityAttemptsRemaining(0)
+    })
+  }, [])
 
   useEffect(() => {
     authApi.getTwoFactorStatus().then(response => {
@@ -206,6 +228,50 @@ export default function Profile() {
     } catch (err: any) {
       setPwError(err.response?.data?.message || 'Failed to change password.')
     } finally { setPwLoading(false) }
+  }
+
+  const refreshIdentityVerificationState = async () => {
+    const [profileResponse, statusResponse] = await Promise.all([
+      authApi.getProfile(),
+      identityVerificationApi.getStatus(),
+    ])
+    const profile = profileResponse.data?.data || profileResponse.data
+    const status = statusResponse.data?.data || statusResponse.data
+    if (profile) {
+      setIdentityVerificationStatus(profile.identityVerificationStatus || 'not_started')
+      setAuthenticatorTwoFactorEnabled(!!profile.authenticatorTwoFactorEnabled)
+      setCanAcceptTasks(!!profile.canAcceptTasks)
+      setHasVerifiedPayoutAccount(!!profile.hasVerifiedPayoutAccount)
+      setIdentityProviderConfigured(!!status?.configured)
+      setIdentityAttemptsRemaining(Number(status?.attemptsRemaining ?? 0))
+      refreshUser()
+    }
+  }
+
+  const handleStartIdentityVerification = async () => {
+    if (!identityConsentAccepted) {
+      setIdentitySessionError('Read the privacy notice and confirm consent before continuing.')
+      return
+    }
+    setIdentitySessionLoading(true)
+    setIdentitySessionError('')
+    try {
+      const response = await identityVerificationApi.createSession({
+        consentAccepted: true,
+        consentVersion: IDENTITY_VERIFICATION_CONSENT_VERSION,
+      })
+      const body = response.data
+      const data = body?.data || body
+      if (body?.success === false || !data?.handoffCode) {
+        throw new Error(body?.message || 'The identity verification session could not be started.')
+      }
+      setIdentitySessionCode(String(data.handoffCode))
+      setIdentitySessionError('')
+    } catch (err: any) {
+      setIdentitySessionError(err.response?.data?.message || err.message || 'The identity verification session could not be started.')
+    } finally {
+      setIdentitySessionLoading(false)
+    }
   }
 
   const handleTotpSetup = async () => {
@@ -388,7 +454,64 @@ export default function Profile() {
                 <p className="text-sm" style={{ margin: '.4rem 0' }}>Identity check: {identityVerificationStatus.replace(/_/g, ' ')}.</p>
                 <p className="text-sm" style={{ margin: '.4rem 0' }}>Authenticator 2FA: {authenticatorTwoFactorEnabled ? 'enabled' : 'not enabled'}.</p>
                 <p className="text-sm" style={{ margin: '.4rem 0' }}>Payout account: {hasVerifiedPayoutAccount ? 'bank recipient verified' : 'not verified'}.</p>
-                <p className="text-sm" style={{ margin: '.4rem 0' }}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Authenticator 2FA can be configured below. Task acceptance remains locked until a verified identity/liveness provider reports a passed result; no identity provider is configured for this staging release.'}</p>
+                <p className="text-sm" style={{ margin: '.4rem 0' }}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance remains locked until the backend confirms identity verification is passed and authenticator 2FA is enabled.'}</p>
+                {identityVerificationStatus !== 'passed' && identityVerificationStatus !== 'manual_review' && (
+                  <div style={{ display: 'grid', gap: '.75rem', marginTop: '.75rem' }}>
+                    {!identityProviderConfigured && (
+                      <p className="text-sm" style={{ margin: 0 }}>
+                        Identity verification is not enabled on this staging API yet. The provider credentials, webhook secret, verification level and approved notice version must be configured first.
+                      </p>
+                    )}
+                    {identityProviderConfigured && (
+                      <>
+                        <p className="text-sm" style={{ margin: 0 }}>
+                          Up to three verification starts are allowed in a rolling 24-hour window. Identity documents and liveness are collected by Sumsub; DoForYou stores only the provider status and minimal event audit metadata.
+                        </p>
+                        <label style={{ display: 'flex', gap: '.6rem', alignItems: 'flex-start' }}>
+                          <input
+                            type="checkbox"
+                            checked={identityConsentAccepted}
+                            onChange={e => setIdentityConsentAccepted(e.target.checked)}
+                            disabled={identitySessionLoading || !!identitySessionCode}
+                          />
+                          <span className="text-sm">
+                            I consent to the identity and liveness verification described in the{' '}
+                            <Link to="/privacy" target="_blank" rel="noreferrer">Privacy Policy</Link> and the provider-specific notice.
+                          </span>
+                        </label>
+                        <p className="text-muted text-xs" style={{ margin: 0 }}>Verification starts remaining in this 24-hour window: {identityAttemptsRemaining}.</p>
+                        {identitySessionError && <div className="alert alert-error" role="alert">{identitySessionError}</div>}
+                        {!identitySessionCode && (
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={() => void handleStartIdentityVerification()}
+                            disabled={!identityConsentAccepted || identitySessionLoading || identityAttemptsRemaining < 1}
+                          >
+                            {identitySessionLoading ? 'Preparing verification…' : 'Start identity verification'}
+                          </button>
+                        )}
+                        {identitySessionCode && (
+                          <SumsubVerificationWidget
+                            handoffCode={identitySessionCode}
+                            onSubmitted={() => {
+                              void refreshIdentityVerificationState().catch(() => {
+                                setIdentitySessionError('Verification was submitted. Return to your profile and refresh to see the provider-reviewed status.')
+                              })
+                            }}
+                            onClose={() => {
+                              setIdentitySessionCode('')
+                              setIdentityConsentAccepted(false)
+                            }}
+                          />
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+                {identityVerificationStatus === 'manual_review' && (
+                  <p className="text-sm" style={{ margin: '.5rem 0 0' }}>Your verification requires review. Task acceptance stays locked; contact support for the next step.</p>
+                )}
               </div>
             )}
           </div>
