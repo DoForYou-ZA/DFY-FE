@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { authApi } from '../../api'
 import './Auth.css'
 
 export default function Login() {
@@ -20,6 +21,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [notice, setNotice] = useState(authState?.registered ? 'Account created. Check your inbox for the verification link before signing in.' : '')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,6 +61,7 @@ export default function Login() {
           <h2>Sign In</h2>
           <p className="auth-subtitle">Enter your credentials to access your account</p>
 
+          {notice && <div className="alert alert-success" role="status">{notice}</div>}
           {error && <div className="alert alert-error"><i className="fas fa-exclamation-circle" /> {error}</div>}
 
           <form onSubmit={handleSubmit}>
@@ -97,8 +101,23 @@ export default function Login() {
           </form>
 
           <p className="auth-switch" style={{ marginTop: '0.75rem' }}>
-            <a href="mailto:info@doforyou.co.za?subject=Password%20reset%20assistance">Forgot password? Contact support</a>
+            <Link to="/forgot-password">Forgot password?</Link>
           </p>
+          {error.toLowerCase().includes('verify your email') && (
+            <p className="auth-switch">
+              <button type="button" className="auth-link-button" disabled={resendLoading} onClick={async () => {
+                setResendLoading(true)
+                try {
+                  const response = await authApi.resendVerification(email.trim().toLowerCase())
+                  setNotice(response.data?.message || 'If the account needs verification, an email will be sent shortly.')
+                  setError('')
+                } catch {
+                  setNotice('If the account needs verification, an email will be sent shortly.')
+                  setError('')
+                } finally { setResendLoading(false) }
+              }}>{resendLoading ? 'Sending…' : 'Resend verification email'}</button>
+            </p>
+          )}
           <p className="auth-switch">
             Don't have an account? <Link
               to={returnToTaskId ? `/register?returnToTaskId=${encodeURIComponent(returnToTaskId)}` : '/register'}
