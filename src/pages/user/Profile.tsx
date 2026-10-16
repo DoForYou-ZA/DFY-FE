@@ -71,9 +71,6 @@ export default function Profile() {
         setForm({ firstName: d.firstName || '', lastName: d.lastName || '', email: d.email || '', phoneNumber: d.phoneNumber || d.contact || '', userType: d.userType || '', idNumber: '', address: d.address || '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : '' })
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
-        setForm(prev => ({ ...prev, idNumber: '' }))
-        setHasIdNumber(!!d.hasIdNumber)
-        setIdNumberLastFour(d.idNumberLastFour || '')
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
       }
@@ -118,6 +115,9 @@ export default function Profile() {
       const r = await authApi.getProfile()
       const d = r.data?.data || r.data
       if (d) {
+        setForm(prev => ({ ...prev, idNumber: '', dateOfBirth: d.dateOfBirth ? d.dateOfBirth.substring(0, 10) : prev.dateOfBirth }))
+        setHasIdNumber(!!d.hasIdNumber)
+        setIdNumberLastFour(d.idNumberLastFour || '')
         localStorage.setItem('currentUser', JSON.stringify(d))
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
