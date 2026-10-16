@@ -40,7 +40,7 @@ export default function ResetPassword() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
+      <div className="auth-card auth-card-single">
         <div className="auth-form-side">
           <h1>Choose a new password</h1>
           <p className="auth-subtitle">Use a unique passphrase you don’t use on another site.</p>
