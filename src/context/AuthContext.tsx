@@ -125,12 +125,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [session.token, session.user])
 
   const logout = useCallback(() => {
+    const existingToken = token || localStorage.getItem('token')
+    // Send revocation with an explicit header before clearing local credentials.
+    // The local sign-out remains immediate if the API is unavailable.
+    if (existingToken) void authApi.logout(existingToken).catch(() => undefined)
     localStorage.removeItem('token')
     localStorage.removeItem('currentUser')
     localStorage.removeItem('refreshToken')
     setToken(null)
     setUser(null)
-  }, [])
+  }, [token])
 
   useEffect(() => {
     if (!token) return
