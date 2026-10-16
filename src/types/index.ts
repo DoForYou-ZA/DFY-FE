@@ -10,9 +10,6 @@ export interface RegisterModel {
   email: string
   phoneNumber: string
   userType: string
-  idNumber: string
-  address: string
-  dateOfBirth?: string
   password: string
   confirmPassword?: string
   termsAccepted: boolean
@@ -32,6 +29,11 @@ export interface User {
   phoneNumber?: string
   userType?: string
   isVerified: boolean
+  emailVerified?: boolean
+  phoneVerified?: boolean
+  identityVerificationStatus?: string
+  authenticatorTwoFactorEnabled?: boolean
+  hasVerifiedPayoutAccount?: boolean
   profileCompleted: boolean
   profileCompletion?: number
   missingProfileFields?: string[]
