@@ -63,6 +63,7 @@ export interface AuthResponse {
   message: string
   requiresTwoFactor?: boolean
   requiresAccountSetup?: boolean
+  requiresAccountLink?: boolean
   user?: User
   token?: string
   refreshToken?: string
