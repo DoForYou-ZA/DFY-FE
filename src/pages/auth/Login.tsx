@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { authApi } from '../../api'
+import GoogleIdentityButton from '../../components/auth/GoogleIdentityButton'
 import './Auth.css'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, googleLogin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -22,23 +23,63 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
-  const [notice, setNotice] = useState(authState?.registered ? 'Account created. Check your inbox for the verification link before signing in.' : authState?.passwordChanged ? 'Password changed successfully. Sign in with your new password.' : '')
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
+  const [secondFactorCode, setSecondFactorCode] = useState('')
+  const [pendingGoogleToken, setPendingGoogleToken] = useState<string | null>(null)
+  const [notice, setNotice = useState(authState?.registered ? 'Account created. Check your inbox for the verification link before signing in.' : authState?.passwordChanged ? 'Password changed successfully. Sign in with your new password.' : '')
+
+  const finishSignIn = (loggedInUser: any) => {
+    sessionStorage.removeItem('dfy:loggedOut')
+    const isAdminUser = !!loggedInUser?.isAdmin || !!loggedInUser?.roles?.includes('Admin') || loggedInUser?.userType === 'Admin'
+    const dest = isAdminUser
+      ? '/admin/dashboard'
+      : (returnToTaskId ? `/tasks/browse?taskId=${encodeURIComponent(returnToTaskId)}` : (from || '/dashboard'))
+    navigate(dest, { replace: true })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const loggedInUser = await login(email.trim().toLowerCase(), password)
-      sessionStorage.removeItem('dfy:loggedOut')
-      const isAdminUser = !!loggedInUser?.isAdmin || !!loggedInUser?.roles?.includes('Admin') || loggedInUser?.userType === 'Admin'
-      // Admins must never inherit a creator/runner return route such as /dashboard.
-      const dest = isAdminUser
-        ? '/admin/dashboard'
-        : (returnToTaskId ? `/tasks/browse?taskId=${encodeURIComponent(returnToTaskId)}` : (from || '/dashboard'))
-      navigate(dest, { replace: true })
+      const loggedInUser = pendingGoogleToken
+        ? await googleLogin(pendingGoogleToken, secondFactorCode.trim())
+        : await login(email.trim().toLowerCase(), password, requiresTwoFactor ? secondFactorCode.trim() : undefined)
+      setPendingGoogleToken(null)
+      setRequiresTwoFactor(false)
+      setSecondFactorCode('')
+      finishSignIn(loggedInUser)
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Login failed. Please try again.')
+      if (err.response?.data?.requiresTwoFactor) {
+        setRequiresTwoFactor(true)
+        setError(err.response?.data?.message || 'Enter your authenticator code to continue.')
+      } else if (err.response?.data?.requiresAccountSetup && pendingGoogleToken) {
+        navigate('/register', { state: { googleIdToken: pendingGoogleToken, returnToTaskId } })
+      } else {
+        setError(err.response?.data?.message || err.message || 'Login failed. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGoogleCredential = async (idToken: string) => {
+    setLoading(true)
+    setError('')
+    try {
+      const loggedInUser = await googleLogin(idToken)
+      finishSignIn(loggedInUser)
+    } catch (err: any) {
+      if (err.response?.data?.requiresTwoFactor) {
+        setPendingGoogleToken(idToken)
+        setRequiresTwoFactor(true)
+        setError(err.response?.data?.message || 'Enter your authenticator code to continue.')
+      } else if (err.response?.data?.requiresAccountSetup) {
+        // Keep the short-lived Google ID token in navigation state only, never in a URL or storage.
+        navigate('/register', { state: { googleIdToken: idToken, returnToTaskId } })
+      } else {
+        setError(err.response?.data?.message || err.message || 'Google sign-in could not be completed.')
+      }
     } finally {
       setLoading(false)
     }
@@ -95,10 +136,49 @@ export default function Login() {
                 </button>
               </div>
             </div>
-            <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading || !email || !password}>
-              {loading ? <><span className="spinner spinner-sm" /> Signing in...</> : 'Sign In'}
+            {requiresTwoFactor && !pendingGoogleToken && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="second-factor-code">Authenticator or recovery code</label>
+                <input
+                  id="second-factor-code"
+                  className="form-input"
+                  value={secondFactorCode}
+                  onChange={e => setSecondFactorCode(e.target.value)}
+                  placeholder="Six-digit code or recovery code"
+                  autoComplete="one-time-code"
+                  inputMode="text"
+                  maxLength={20}
+                  required
+                />
+              </div>
+            )}
+            <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading || (!pendingGoogleToken && (!email || !password)) || (requiresTwoFactor && !secondFactorCode.trim())}>
+              {loading ? <><span className="spinner spinner-sm" /> Signing in...</> : (requiresTwoFactor ? 'Verify & Sign In' : 'Sign In')}
             </button>
           </form>
+
+          {pendingGoogleToken && requiresTwoFactor && (
+            <div className="form-group" style={{ marginTop: '1rem' }}>
+              <label className="form-label" htmlFor="google-second-factor-code">Authenticator or recovery code</label>
+              <input
+                id="google-second-factor-code"
+                className="form-input"
+                value={secondFactorCode}
+                onChange={e => setSecondFactorCode(e.target.value)}
+                placeholder="Six-digit code or recovery code"
+                autoComplete="one-time-code"
+                maxLength={20}
+              />
+              <button type="button" className="btn btn-primary btn-block" disabled={loading || !secondFactorCode.trim()} onClick={() => { void handleSubmit({ preventDefault: () => {} } as React.FormEvent) }}>
+                {loading ? 'Verifying…' : 'Verify Google sign-in'}
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gap: '.75rem', margin: '1.25rem 0', textAlign: 'center' }}>
+            <div className="text-muted text-sm">or</div>
+            <GoogleIdentityButton onCredential={handleGoogleCredential} disabled={loading} />
+          </div>
 
           <p className="auth-switch" style={{ marginTop: '0.75rem' }}>
             <Link to="/forgot-password">Forgot password?</Link>
