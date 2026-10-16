@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
-import type { User } from '../types'
+import type { AuthResponse, GoogleRegisterModel, User } from '../types'
 import { authApi } from '../api'
 
 
@@ -8,7 +8,9 @@ interface AuthContextType {
   token: string | null
   loading: boolean
   loginTransitioning: boolean
-  login: (email: string, password: string) => Promise<User>
+  login: (email: string, password: string, secondFactorCode?: string) => Promise<User>
+  googleLogin: (idToken: string, secondFactorCode?: string) => Promise<User>
+  googleRegister: (data: GoogleRegisterModel) => Promise<User>
   logout: () => void
   refreshUser: () => void
   isAuthenticated: () => boolean
@@ -54,6 +56,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const lastActivityRefreshRef = useRef(0)
   const refreshInFlightRef = useRef<Promise<void> | null>(null)
+
+  const acceptAuthResponse = useCallback(async (data: AuthResponse): Promise<User> => {
+    if (!data.success || !data.token || !data.user) {
+      throw new Error(data.message || 'Sign-in failed')
+    }
+    localStorage.setItem('token', data.token)
+    lastActivityRefreshRef.current = Date.now()
+    setToken(data.token)
+    let fullUser = data.user
+    try {
+      const profileResponse = await authApi.getProfile()
+      const profile = profileResponse.data?.data || profileResponse.data
+      if (profile) fullUser = { ...data.user, ...profile }
+    } catch {
+      // The signed auth response is the fallback if profile refresh is temporarily unavailable.
+    }
+    const { idNumber: _legacyIdNumber, ...safeUser } = fullUser as any
+    localStorage.setItem('currentUser', JSON.stringify(safeUser))
+    setUser(safeUser as User)
+    setTimeout(() => setLoginTransitioning(false), 0)
+    return safeUser as User
+  }, [])
 
   const refreshSession = useCallback(async () => {
     if (!localStorage.getItem('token')) return
@@ -147,36 +171,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [token, refreshSession, logout])
 
-  const login = useCallback(async (email: string, password: string): Promise<User> => {
+  const login = useCallback(async (email: string, password: string, secondFactorCode?: string): Promise<User> => {
     setLoginTransitioning(true)
     try {
-      const res = await authApi.login({ email, password })
-      const data = res.data
-      if (!data.success || !data.token || !data.user) {
-        throw new Error(data.message || 'Login failed')
-      }
-      localStorage.setItem('token', data.token)
-      lastActivityRefreshRef.current = Date.now()
-      setToken(data.token)
-    // Fetch full profile so idNumber/address are available for isProfileComplete
-      let fullUser = data.user
-      try {
-        const profileRes = await authApi.getProfile()
-        const profileData = profileRes.data?.data || profileRes.data
-        if (profileData) fullUser = { ...data.user, ...profileData }
-      } catch { /* fall back to login user */ }
-      localStorage.setItem('currentUser', JSON.stringify(fullUser))
-      setUser(fullUser)
-      // Login awaits this function and navigates immediately after it resolves.
-      // Defer clearing the flag by one macrotask so Layout cannot render Header
-      // between the auth state update and the destination navigation.
-      setTimeout(() => setLoginTransitioning(false), 0)
-      return fullUser
+      const response = await authApi.login({ email, password, secondFactorCode })
+      return await acceptAuthResponse(response.data)
     } catch (error) {
       setLoginTransitioning(false)
       throw error
     }
-  }, [])
+  }, [acceptAuthResponse])
+
+  const googleLogin = useCallback(async (idToken: string, secondFactorCode?: string): Promise<User> => {
+    setLoginTransitioning(true)
+    try {
+      const response = await authApi.googleLogin(idToken, secondFactorCode)
+      return await acceptAuthResponse(response.data)
+    } catch (error) {
+      setLoginTransitioning(false)
+      throw error
+    }
+  }, [acceptAuthResponse])
+
+  const googleRegister = useCallback(async (data: GoogleRegisterModel): Promise<User> => {
+    setLoginTransitioning(true)
+    try {
+      const response = await authApi.googleRegister(data)
+      return await acceptAuthResponse(response.data)
+    } catch (error) {
+      setLoginTransitioning(false)
+      throw error
+    }
+  }, [acceptAuthResponse])
+
 
   const refreshUser = useCallback(() => {
     authApi.getProfile()
@@ -224,7 +251,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, token, loading, loginTransitioning,
-      login, logout, refreshUser,
+      login, googleLogin, googleRegister, logout, refreshUser,
       isAuthenticated, isAdmin,
       isProfileComplete, isProfileIncomplete,
       canPostErrands, canAcceptTasks,
