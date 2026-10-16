@@ -46,6 +46,10 @@ export default function Profile() {
   const [prefSuccess, setPrefSuccess] = useState('')
   const [completion, setCompletion] = useState(0)
   const [missingProfileFields, setMissingProfileFields] = useState<string[]>([])
+  const [marketingConsent, setMarketingConsent] = useState(false)
+  const [marketingConsentSaving, setMarketingConsentSaving] = useState(false)
+  const [marketingConsentMessage, setMarketingConsentMessage] = useState('')
+  const [marketingConsentError, setMarketingConsentError] = useState('')
   const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_started')
   const [authenticatorTwoFactorEnabled, setAuthenticatorTwoFactorEnabled] = useState(false)
   const [canAcceptTasks, setCanAcceptTasks] = useState(false)
@@ -71,6 +75,7 @@ export default function Profile() {
         setIdNumberLastFour(d.idNumberLastFour || '')
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
+        setMarketingConsent(!!d.marketingConsent)
         setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
         setAuthenticatorTwoFactorEnabled(!!d.authenticatorTwoFactorEnabled)
         setCanAcceptTasks(!!d.canAcceptTasks)
@@ -83,6 +88,7 @@ export default function Profile() {
         setIdNumberLastFour('')
         setCompletion(user.profileCompletion ?? 0)
         setMissingProfileFields((user as any).missingProfileFields ?? [])
+        setMarketingConsent(!!user.marketingConsent)
         setIdentityVerificationStatus(user.identityVerificationStatus || 'not_started')
         setAuthenticatorTwoFactorEnabled(!!user.authenticatorTwoFactorEnabled)
         setCanAcceptTasks(!!user.canAcceptTasks)
@@ -129,6 +135,7 @@ export default function Profile() {
         localStorage.setItem('currentUser', JSON.stringify(d))
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
+        setMarketingConsent(!!d.marketingConsent)
         setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
         setAuthenticatorTwoFactorEnabled(!!d.authenticatorTwoFactorEnabled)
         setCanAcceptTasks(!!d.canAcceptTasks)
@@ -139,6 +146,28 @@ export default function Profile() {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update profile.')
     } finally { setLoading(false) }
+  }
+
+  const handleMarketingConsentChange = async (enabled: boolean) => {
+    const previous = marketingConsent
+    setMarketingConsent(enabled)
+    setMarketingConsentSaving(true)
+    setMarketingConsentError('')
+    setMarketingConsentMessage('')
+    try {
+      const response = await authApi.updateMarketingConsent(enabled)
+      if (response.data?.success === false) throw new Error(response.data?.message || 'Could not save your marketing preference.')
+      const data = response.data?.data || response.data
+      setMarketingConsent(Boolean(data?.enabled ?? enabled))
+      setMarketingConsentMessage(enabled
+        ? 'Optional marketing updates are enabled.'
+        : 'Optional marketing updates have been turned off.')
+    } catch (err: any) {
+      setMarketingConsent(previous)
+      setMarketingConsentError(err.response?.data?.message || err.message || 'Could not save your marketing preference.')
+    } finally {
+      setMarketingConsentSaving(false)
+    }
   }
 
   const handlePwChange = async (e: React.FormEvent) => {
@@ -340,6 +369,29 @@ export default function Profile() {
                 <p className="text-sm" style={{ margin: '.4rem 0' }}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance remains locked until identity verification and authenticator 2FA are completed. Those setup flows are not yet available in staging.'}</p>
               </div>
             )}
+          </div>
+
+          <div className="section-card">
+            <div className="section-header"><h2><i className="fas fa-envelope" /> Marketing preferences</h2></div>
+            {marketingConsentMessage && <div className="alert alert-info mb-3" role="status">{marketingConsentMessage}</div>}
+            {marketingConsentError && <div className="alert alert-error mb-3" role="alert">{marketingConsentError}</div>}
+            <label style={{ display: 'flex', gap: '.75rem', alignItems: 'flex-start', cursor: marketingConsentSaving ? 'wait' : 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={marketingConsent}
+                disabled={marketingConsentSaving}
+                onChange={event => { void handleMarketingConsentChange(event.target.checked) }}
+                aria-label="Receive optional DoForYou marketing emails"
+                style={{ marginTop: '.25rem' }}
+              />
+              <span>
+                <strong>Send me optional DoForYou product updates and offers.</strong>
+                <span className="text-muted text-sm" style={{ display: 'block', marginTop: '.25rem' }}>
+                  This preference is optional and can be changed at any time. Important account, task, security and payment messages are not marketing.
+                </span>
+              </span>
+            </label>
+            {marketingConsentSaving && <p className="text-muted text-sm" role="status" style={{ marginTop: '.5rem' }}>Saving preference…</p>}
           </div>
 
           <div className="section-card">
