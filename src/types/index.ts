@@ -47,6 +47,7 @@ export interface User {
   roles?: string[]
   isAdmin?: boolean
   hasGoogleLogin?: boolean
+  hasPasswordLogin?: boolean
   marketingConsent?: boolean
   marketingConsentUpdatedAt?: string
   marketingConsentVersion?: string
