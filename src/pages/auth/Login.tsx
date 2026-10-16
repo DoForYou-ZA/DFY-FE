@@ -22,7 +22,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
-  const [notice, setNotice] = useState(authState?.registered ? 'Account created. Check your inbox for the verification link before signing in.' : '')
+  const [notice, setNotice] = useState(authState?.registered ? 'Account created. Check your inbox for the verification link before signing in.' : authState?.passwordChanged ? 'Password changed successfully. Sign in with your new password.' : '')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
