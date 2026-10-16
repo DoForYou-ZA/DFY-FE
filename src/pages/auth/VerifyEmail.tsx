@@ -32,7 +32,7 @@ export default function VerifyEmail() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
+      <div className="auth-card auth-card-single">
         <div className="auth-form-side">
           <h1>{status === 'success' ? 'Email verified' : status === 'loading' ? 'Verifying email' : 'Verification needed'}</h1>
           <p className="auth-subtitle" role="status">{message}</p>
