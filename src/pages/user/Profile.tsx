@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { authApi, identityVerificationApi, userPreferencesApi } from '../../api'
 import SumsubVerificationWidget from '../../components/identity/SumsubVerificationWidget'
+import GoogleIdentityButton from '../../components/auth/GoogleIdentityButton'
 import './Profile.css'
 
 const IDENTITY_VERIFICATION_CONSENT_VERSION = 'identity-verification-v1'
@@ -38,6 +39,13 @@ export default function Profile() {
   const [hasIdNumber, setHasIdNumber] = useState(false)
   const [idNumberLastFour, setIdNumberLastFour] = useState('')
   const [hasPasswordLogin, setHasPasswordLogin] = useState(true)
+  const [hasGoogleLogin, setHasGoogleLogin] = useState(false)
+  const [googleLinkIdToken, setGoogleLinkIdToken] = useState('')
+  const [googleLinkPassword, setGoogleLinkPassword] = useState('')
+  const [googleLinkSecondFactor, setGoogleLinkSecondFactor] = useState('')
+  const [googleLinkLoading, setGoogleLinkLoading] = useState(false)
+  const [googleLinkMessage, setGoogleLinkMessage] = useState('')
+  const [googleLinkError, setGoogleLinkError] = useState('')
   const [passwordSetupLoading, setPasswordSetupLoading] = useState(false)
   const [passwordSetupMessage, setPasswordSetupMessage] = useState('')
   const [passwordSetupError, setPasswordSetupError] = useState('')
@@ -87,6 +95,7 @@ export default function Profile() {
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
         setHasPasswordLogin(d.hasPasswordLogin !== false)
+        setHasGoogleLogin(!!d.hasGoogleLogin)
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
         setMarketingConsent(!!d.marketingConsent)
@@ -101,6 +110,7 @@ export default function Profile() {
         setHasIdNumber(false)
         setIdNumberLastFour('')
         setHasPasswordLogin(user.hasPasswordLogin !== false)
+        setHasGoogleLogin(!!user.hasGoogleLogin)
         setCompletion(user.profileCompletion ?? 0)
         setMissingProfileFields((user as any).missingProfileFields ?? [])
         setMarketingConsent(!!user.marketingConsent)
@@ -161,6 +171,7 @@ export default function Profile() {
         setHasIdNumber(!!d.hasIdNumber)
         setIdNumberLastFour(d.idNumberLastFour || '')
         setHasPasswordLogin(d.hasPasswordLogin !== false)
+        setHasGoogleLogin(!!d.hasGoogleLogin)
         localStorage.setItem('currentUser', JSON.stringify(d))
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
@@ -189,6 +200,46 @@ export default function Profile() {
       setPasswordSetupMessage('If an account matches that email, password reset instructions will be sent shortly.')
     } finally {
       setPasswordSetupLoading(false)
+    }
+  }
+
+  const handleGoogleLink = async () => {
+    setGoogleLinkError('')
+    setGoogleLinkMessage('')
+    if (!googleLinkIdToken) {
+      setGoogleLinkError('Choose the Google account you want to link first.')
+      return
+    }
+    if (!hasPasswordLogin || !googleLinkPassword) {
+      setGoogleLinkError('Enter your current DoForYou password to approve this link.')
+      return
+    }
+
+    setGoogleLinkLoading(true)
+    try {
+      const reauthResponse = await authApi.reauthenticate({
+        currentPassword: googleLinkPassword,
+        secondFactorCode: totpEnabled ? googleLinkSecondFactor.trim() || undefined : undefined,
+      })
+      if (reauthResponse.data?.success === false) {
+        throw new Error(reauthResponse.data?.message || 'Reauthentication failed.')
+      }
+      const reauthData = reauthResponse.data?.data || reauthResponse.data
+      const stepUpToken = reauthData?.stepUpToken
+      if (!stepUpToken) throw new Error('A fresh reauthentication token was not returned. Try again.')
+      const linkResponse = await authApi.linkGoogleAccount(googleLinkIdToken, stepUpToken)
+      if (linkResponse.data?.success === false) {
+        throw new Error(linkResponse.data?.message || 'Google could not be linked.')
+      }
+      setGoogleLinkIdToken('')
+      setGoogleLinkPassword('')
+      setGoogleLinkSecondFactor('')
+      await logout()
+      navigate('/login', { replace: true, state: { googleLinked: true } })
+    } catch (err: any) {
+      setGoogleLinkError(err.response?.data?.message || err.message || 'Google could not be linked. No account changes were confirmed.')
+    } finally {
+      setGoogleLinkLoading(false)
     }
   }
 
@@ -602,6 +653,43 @@ export default function Profile() {
                   {totpLoading ? 'Disabling…' : 'Disable authenticator'}
                 </button>
               </>
+            )}
+          </div>
+
+          <div className="section-card">
+            <div className="section-header"><h2><i className="fab fa-google" /> Linked sign-in methods</h2></div>
+            {hasGoogleLogin ? (
+              <p className="text-sm" role="status">Google sign-in is linked to this account.</p>
+            ) : hasPasswordLogin ? (
+              <>
+                <p className="text-muted text-sm">Linking Google requires your current DoForYou password and, when enabled, an authenticator or recovery code. We never merge accounts automatically based on email alone.</p>
+                {googleLinkError && <div className="alert alert-error mb-3" role="alert">{googleLinkError}</div>}
+                {googleLinkMessage && <div className="alert alert-info mb-3" role="status">{googleLinkMessage}</div>}
+                <GoogleIdentityButton
+                  onCredential={token => { setGoogleLinkIdToken(token); setGoogleLinkError(''); setGoogleLinkMessage('Google account selected. Complete reauthentication to link it.') }}
+                  disabled={googleLinkLoading}
+                />
+                {googleLinkIdToken && (
+                  <>
+                    <div className="form-group" style={{ marginTop: '.75rem' }}>
+                      <label className="form-label" htmlFor="google-link-password">Current DoForYou password</label>
+                      <input id="google-link-password" type="password" className="form-input" value={googleLinkPassword} onChange={e => setGoogleLinkPassword(e.target.value)} autoComplete="current-password" />
+                    </div>
+                    {totpEnabled && (
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="google-link-second-factor">Authenticator or recovery code</label>
+                        <input id="google-link-second-factor" className="form-input" value={googleLinkSecondFactor} onChange={e => setGoogleLinkSecondFactor(e.target.value)} autoComplete="one-time-code" />
+                      </div>
+                    )}
+                    <button type="button" className="btn btn-primary" onClick={() => { void handleGoogleLink() }} disabled={googleLinkLoading || !googleLinkPassword || (totpEnabled && !googleLinkSecondFactor.trim())}>
+                      {googleLinkLoading ? 'Reauthenticating…' : 'Link Google account'}
+                    </button>
+                    <button type="button" className="btn btn-secondary" onClick={() => { setGoogleLinkIdToken(''); setGoogleLinkPassword(''); setGoogleLinkSecondFactor(''); setGoogleLinkError(''); setGoogleLinkMessage('') }} disabled={googleLinkLoading} style={{ marginLeft: '.5rem' }}>Cancel</button>
+                  </>
+                )}
+              </>
+            ) : (
+              <p className="text-muted text-sm">Google linking is unavailable for this account's current sign-in configuration. Contact support if you need to change your sign-in method.</p>
             )}
           </div>
 
