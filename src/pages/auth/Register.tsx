@@ -9,7 +9,7 @@ const PRIVACY_VERSION = 'privacy-v1'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function extractDobFromId(id: string): string {
-  if (!/^\\d{6}/.test(id)) return ''
+  if (!/^\d{6}/.test(id)) return ''
   const yy = Number(id.slice(0, 2))
   const month = Number(id.slice(2, 4))
   const day = Number(id.slice(4, 6))
@@ -29,7 +29,7 @@ function extractDobFromId(id: string): string {
 }
 
 function isValidSouthAfricanId(id: string): boolean {
-  if (!/^\\d{13}$/.test(id) || !extractDobFromId(id)) return false
+  if (!/^\d{13}$/.test(id) || !extractDobFromId(id)) return false
   let sum = 0
   for (let i = 0; i < id.length; i++) {
     let digit = Number(id[i])
