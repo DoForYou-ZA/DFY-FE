@@ -2,6 +2,7 @@
 export interface LoginModel {
   email: string
   password: string
+  secondFactorCode?: string
 }
 
 export interface RegisterModel {
@@ -45,6 +46,10 @@ export interface User {
   lastLoginAt?: string
   roles?: string[]
   isAdmin?: boolean
+  hasGoogleLogin?: boolean
+  authenticatorTwoFactorEnabled?: boolean
+  identityVerificationStatus?: string
+  hasVerifiedPayoutAccount?: boolean
   idNumber?: string
   hasIdNumber?: boolean
   idNumberLastFour?: string
@@ -55,10 +60,25 @@ export interface User {
 export interface AuthResponse {
   success: boolean
   message: string
+  requiresTwoFactor?: boolean
+  requiresAccountSetup?: boolean
   user?: User
   token?: string
   refreshToken?: string
   expiration?: string
+}
+
+export interface GoogleRegisterModel {
+  idToken: string
+  firstName: string
+  lastName: string
+  phoneNumber: string
+  userType: string
+  termsAccepted: boolean
+  privacyAccepted: boolean
+  termsVersion: string
+  privacyVersion: string
+  marketingConsent: boolean
 }
 
 export interface ChangePasswordModel {
