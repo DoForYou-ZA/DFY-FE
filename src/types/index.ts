@@ -47,9 +47,6 @@ export interface User {
   roles?: string[]
   isAdmin?: boolean
   hasGoogleLogin?: boolean
-  authenticatorTwoFactorEnabled?: boolean
-  identityVerificationStatus?: string
-  hasVerifiedPayoutAccount?: boolean
   idNumber?: string
   hasIdNumber?: boolean
   idNumberLastFour?: string
