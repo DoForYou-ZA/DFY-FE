@@ -26,7 +26,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
+      <div className="auth-card auth-card-single">
         <div className="auth-form-side">
           <h1>Reset your password</h1>
           <p className="auth-subtitle">Enter the email address for your DoForYou account. If it matches an account, we’ll send a reset link.</p>
