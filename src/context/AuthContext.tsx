@@ -117,8 +117,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const d = r.data?.data || r.data
         if (d) {
           const merged = { ...session.user, ...d }
-          localStorage.setItem('currentUser', JSON.stringify(merged))
-          setUser(merged)
+          const { idNumber: _legacyIdNumber, ...safeUser } = merged as any
+          localStorage.setItem('currentUser', JSON.stringify(safeUser))
+          setUser(safeUser as User)
         }
       })
       .catch(() => { /* keep the synchronously restored user */ })
@@ -214,8 +215,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(r => {
         const d = r.data?.data || r.data
         if (d) {
-          localStorage.setItem('currentUser', JSON.stringify(d))
-          setUser(d)
+          const { idNumber: _legacyIdNumber, ...safeUser } = d as any
+          localStorage.setItem('currentUser', JSON.stringify(safeUser))
+          setUser(safeUser as User)
         }
       })
       .catch(() => { /* retain current state on transient refresh failure */ })
