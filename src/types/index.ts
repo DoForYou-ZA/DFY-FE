@@ -15,6 +15,11 @@ export interface RegisterModel {
   dateOfBirth?: string
   password: string
   confirmPassword?: string
+  termsAccepted: boolean
+  privacyAccepted: boolean
+  termsVersion: string
+  privacyVersion: string
+  marketingConsent: boolean
 }
 
 export interface User {
