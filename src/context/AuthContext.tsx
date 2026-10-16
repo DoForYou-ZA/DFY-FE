@@ -31,7 +31,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedUser = localStorage.getItem('currentUser')
     if (!storedToken || !storedUser) return { token: null as string | null, user: null as User | null }
     try {
-      return { token: storedToken, user: JSON.parse(storedUser) as User }
+      const parsed = JSON.parse(storedUser) as User
+      const { idNumber: _legacyIdNumber, ...safeUser } = parsed as any
+      if (_legacyIdNumber !== undefined) localStorage.setItem('currentUser', JSON.stringify(safeUser))
+      return { token: storedToken, user: safeUser as User }
     } catch {
       localStorage.removeItem('token')
       localStorage.removeItem('currentUser')
