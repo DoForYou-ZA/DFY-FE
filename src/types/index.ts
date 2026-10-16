@@ -10,7 +10,7 @@ export interface RegisterModel {
   email: string
   phoneNumber: string
   userType: string
-  idNumber?: string
+  idNumber: string
   address: string
   dateOfBirth?: string
   password: string
