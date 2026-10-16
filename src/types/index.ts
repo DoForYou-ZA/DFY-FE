@@ -117,7 +117,7 @@ export interface Task {
   dateNeeded: string
   budget: number
   notes?: string
-  paymentStatus: PaymentStatus
+  paymentStatus: PaymentStatus; payoutStatus?: string
   taskStatus: TaskStatus
   helperName?: string
   helperContact?: string
