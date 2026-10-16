@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { authApi, userPreferencesApi } from '../../api'
 import './Profile.css'
@@ -47,7 +48,8 @@ function deriveDobFromId(id: string): string {
 }
 
 export default function Profile() {
-  const { user, refreshUser } = useAuth()
+  const { user, refreshUser, logout } = useAuth()
+  const navigate = useNavigate()
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phoneNumber: '', userType: '', idNumber: '', address: '', dateOfBirth: '' })
   const [hasIdNumber, setHasIdNumber] = useState(false)
   const [idNumberLastFour, setIdNumberLastFour] = useState('')
@@ -137,8 +139,9 @@ export default function Profile() {
     try {
       const res = await authApi.changePassword(pwForm)
       if (!res.data?.success) throw new Error(res.data?.message || 'Failed to change password.')
-      setPwSuccess('Password changed successfully!')
       setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      logout()
+      navigate('/login', { replace: true, state: { passwordChanged: true } })
     } catch (err: any) {
       setPwError(err.response?.data?.message || 'Failed to change password.')
     } finally { setPwLoading(false) }
