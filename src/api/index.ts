@@ -11,6 +11,7 @@ export const identityVerificationApi = {
   getStatus: () => api.get('/identity-verification/status'),
   createSession: (data: { consentAccepted: boolean; consentVersion: string }) => api.post('/identity-verification/session', data),
   exchange: (handoffCode: string) => api.post('/identity-verification/exchange', { handoffCode }),
+  refresh: () => api.post('/identity-verification/refresh', {}),
 }
 
 export const authApi = {
