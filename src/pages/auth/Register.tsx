@@ -3,43 +3,14 @@ import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-do
 import { authApi } from '../../api'
 import './Auth.css'
 
-const STEPS = ['Personal Info', 'Role & Details', 'Security']
+const STEPS = ['Personal Info', 'Choose Role', 'Security']
 const TERMS_VERSION = 'terms-v1'
 const PRIVACY_VERSION = 'privacy-v1'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function extractDobFromId(id: string): string {
-  if (!/^\d{6}/.test(id)) return ''
-  const yy = Number(id.slice(0, 2))
-  const month = Number(id.slice(2, 4))
-  const day = Number(id.slice(4, 6))
-  const today = new Date()
-  const currentCentury = Math.floor(today.getFullYear() / 100) * 100
-  for (const year of [currentCentury + yy, currentCentury + yy - 100]) {
-    const dob = new Date(Date.UTC(year, month - 1, day))
-    if (dob.getUTCFullYear() !== year || dob.getUTCMonth() !== month - 1 || dob.getUTCDate() !== day) return ''
-    let age = today.getUTCFullYear() - year
-    const birthdayPassed = today.getUTCMonth() > month - 1 || (today.getUTCMonth() === month - 1 && today.getUTCDate() >= day)
-    if (!birthdayPassed) age--
-    if (age >= 18 && age <= 110 && dob.getTime() <= Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())) {
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    }
-  }
-  return ''
-}
-
-function isValidSouthAfricanId(id: string): boolean {
-  if (!/^\d{13}$/.test(id) || !extractDobFromId(id)) return false
-  let sum = 0
-  for (let i = 0; i < id.length; i++) {
-    let digit = Number(id[i])
-    if (i % 2 === 1) {
-      digit *= 2
-      if (digit > 9) digit -= 9
-    }
-    sum += digit
-  }
-  return sum % 10 === 0
+function isValidSouthAfricanPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, '')
+  return /^0[6-8]\d{8}$/.test(digits) || /^27[6-8]\d{8}$/.test(digits)
 }
 
 export default function Register() {
@@ -58,26 +29,22 @@ export default function Register() {
 
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phoneNumber: '',
-    userType: '', idNumber: '', dateOfBirth: '', address: '',
+    userType: '',
     password: '', confirmPassword: '',
   })
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [field]: e.target.value }))
 
-  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 13)
-    setForm(f => ({ ...f, idNumber: digits, dateOfBirth: extractDobFromId(digits) }))
-  }
-
   const canNext = () => {
-    if (step === 1) return !!form.firstName.trim() && !!form.lastName.trim() && EMAIL_RE.test(form.email.trim()) && !!form.phoneNumber.trim()
-    if (step === 2) return !!form.userType && isValidSouthAfricanId(form.idNumber) && !!form.dateOfBirth && !!form.address.trim()
+    if (step === 1) return !!form.firstName.trim() && !!form.lastName.trim() && EMAIL_RE.test(form.email.trim()) && isValidSouthAfricanPhone(form.phoneNumber)
+    if (step === 2) return !!form.userType
     return false
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (form.password.length < 12 || form.password.length > 72 || new TextEncoder().encode(form.password).length > 72) { setError('Use a password between 12 and 72 characters and no more than 72 UTF-8 bytes.'); return }
     if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return }
     setError(''); setLoading(true)
     if (!termsAccepted || !privacyAccepted) {
@@ -89,8 +56,7 @@ export default function Register() {
       const res = await authApi.register({
         firstName: form.firstName.trim(), lastName: form.lastName.trim(),
         email: form.email.trim().toLowerCase(), phoneNumber: form.phoneNumber.trim(),
-        userType: form.userType, idNumber: form.idNumber,
-        dateOfBirth: form.dateOfBirth, address: form.address.trim(),
+        userType: form.userType,
         password: form.password,
         termsAccepted, privacyAccepted,
         termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION,
@@ -171,18 +137,9 @@ export default function Register() {
                     </label>
                   ))}
                 </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <input className="form-input" placeholder="ID Number *" maxLength={13} value={form.idNumber} onChange={handleIdChange} required />
-                    <small className="text-muted text-xs">Date of birth auto-fills from ID</small>
-                  </div>
-                  <div className="form-group">
-                    <input type="date" className="form-input" placeholder="Date of Birth *" value={form.dateOfBirth} readOnly required />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <input className="form-input" placeholder="Address *" value={form.address} onChange={set('address')} required />
-                </div>
+                <p className="text-muted text-sm" style={{ lineHeight: 1.5, marginTop: '0.75rem' }}>
+                  You can complete runner identity verification later, before accepting paid tasks. Your phone number is for contact only; DoForYou does not verify it by SMS.
+                </p>
                 <div className="step-buttons">
                   <button type="button" className="btn btn-secondary" onClick={() => setStep(1)}><i className="fas fa-arrow-left" /> Back</button>
                   <button type="button" className="btn btn-primary" onClick={() => canNext() && setStep(3)} disabled={!canNext()}>Continue <i className="fas fa-arrow-right" /></button>
@@ -230,7 +187,7 @@ export default function Register() {
                 </div>
                 <div className="step-buttons">
                   <button type="button" className="btn btn-secondary" onClick={() => setStep(2)}><i className="fas fa-arrow-left" /> Back</button>
-                  <button type="submit" className="btn btn-primary" disabled={loading || form.password.length < 12 || form.password.length > 72 || form.password !== form.confirmPassword || !termsAccepted || !privacyAccepted}>
+                  <button type="submit" className="btn btn-primary" disabled={loading || form.password.length < 12 || form.password.length > 72 || new TextEncoder().encode(form.password).length > 72 || form.password !== form.confirmPassword || !termsAccepted || !privacyAccepted}>
                     {loading ? <><span className="spinner spinner-sm" /> Creating...</> : 'Create Account'}
                   </button>
                 </div>
