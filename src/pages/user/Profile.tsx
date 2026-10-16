@@ -65,6 +65,10 @@ export default function Profile() {
   const [prefSuccess, setPrefSuccess] = useState('')
   const [completion, setCompletion] = useState(0)
   const [missingProfileFields, setMissingProfileFields] = useState<string[]>([])
+  const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_started')
+  const [authenticatorTwoFactorEnabled, setAuthenticatorTwoFactorEnabled] = useState(false)
+  const [canAcceptTasks, setCanAcceptTasks] = useState(false)
+  const [hasVerifiedPayoutAccount, setHasVerifiedPayoutAccount] = useState(false)
 
   useEffect(() => {
     authApi.getProfile().then(r => {
@@ -75,6 +79,10 @@ export default function Profile() {
         setIdNumberLastFour(d.idNumberLastFour || '')
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
+        setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
+        setAuthenticatorTwoFactorEnabled(!!d.authenticatorTwoFactorEnabled)
+        setCanAcceptTasks(!!d.canAcceptTasks)
+        setHasVerifiedPayoutAccount(!!d.hasVerifiedPayoutAccount)
       }
     }).catch(() => {
       if (user) {
@@ -83,6 +91,10 @@ export default function Profile() {
         setIdNumberLastFour('')
         setCompletion(user.profileCompletion ?? 0)
         setMissingProfileFields((user as any).missingProfileFields ?? [])
+        setIdentityVerificationStatus(user.identityVerificationStatus || 'not_started')
+        setAuthenticatorTwoFactorEnabled(!!user.authenticatorTwoFactorEnabled)
+        setCanAcceptTasks(!!user.canAcceptTasks)
+        setHasVerifiedPayoutAccount(!!user.hasVerifiedPayoutAccount)
       }
     })
   }, [user])
@@ -106,8 +118,8 @@ export default function Profile() {
       setLoading(false)
       return
     }
-    if ((form.idNumber.trim() && form.idNumber.length !== 13) || (!form.idNumber.trim() && !hasIdNumber)) {
-      setError('Enter a valid 13-digit South African ID number, or leave it blank to keep the ID already on file.')
+    if (form.idNumber.trim() && form.idNumber.length !== 13) {
+      setError('Enter a valid 13-digit South African ID number, or leave the field blank.')
       setLoading(false)
       return
     }
@@ -123,6 +135,10 @@ export default function Profile() {
         localStorage.setItem('currentUser', JSON.stringify(d))
         setCompletion(d.profileCompletion ?? 0)
         setMissingProfileFields(d.missingProfileFields ?? [])
+        setIdentityVerificationStatus(d.identityVerificationStatus || 'not_started')
+        setAuthenticatorTwoFactorEnabled(!!d.authenticatorTwoFactorEnabled)
+        setCanAcceptTasks(!!d.canAcceptTasks)
+        setHasVerifiedPayoutAccount(!!d.hasVerifiedPayoutAccount)
         refreshUser()
       }
       setSuccess('Profile updated successfully!')
@@ -213,10 +229,19 @@ export default function Profile() {
                 <div className="form-group"><label className="form-label">Email</label><input type="email" className="form-input" value={form.email} readOnly disabled title="Email changes require account verification support." /></div>
                 <div className="form-group"><label className="form-label">Phone Number</label><input type="tel" className="form-input" value={form.phoneNumber} onChange={set('phoneNumber')} /></div>
               </div>
-              <div className="form-row-2">
-                <div className="form-group"><label className="form-label">South African ID Number</label>{hasIdNumber && <small className="text-muted">ID securely on file ending {idNumberLastFour}. Leave blank to keep it, or enter a new ID to replace it.</small>}<input className="form-input" value={form.idNumber} onChange={handleIdNumber} maxLength={13} autoComplete="off" placeholder={hasIdNumber ? "Leave blank to keep the ID on file" : "Enter 13-digit South African ID"} /></div>
-                <div className="form-group"><label className="form-label">Date of Birth</label><input type="date" className="form-input" value={form.dateOfBirth} readOnly /></div>
-              </div>
+              {(form.userType === 'runner' || form.userType === 'both') && (
+                <>
+                  <div className="form-row-2">
+                    <div className="form-group">
+                      <label className="form-label">Runner identity ID</label>
+                      {hasIdNumber && <small className="text-muted">ID on file ending {idNumberLastFour}. Leave blank to keep it, or enter a replacement.</small>}
+                      <input className="form-input" value={form.idNumber} onChange={handleIdNumber} maxLength={13} autoComplete="off" placeholder={hasIdNumber ? "Leave blank to keep the ID on file" : "Enter 13-digit South African ID"} />
+                    </div>
+                    <div className="form-group"><label className="form-label">Date of Birth</label><input type="date" className="form-input" value={form.dateOfBirth} readOnly /></div>
+                  </div>
+                  <p className="text-muted text-sm">A valid ID format is not identity verification. Runner acceptance remains locked until identity/liveness checks and authenticator-based 2FA are completed.</p>
+                </>
+              )}
               <div className="form-group"><label className="form-label">Address</label><input className="form-input" value={form.address} onChange={set('address')} /></div>
               <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? <><span className="spinner spinner-sm" /> Saving...</> : <><i className="fas fa-save" /> Save Changes</>}</button>
             </form>
@@ -248,6 +273,15 @@ export default function Profile() {
                 </label>
               ))}
             </div>
+            {(form.userType === 'runner' || form.userType === 'both') && (
+              <div className="alert alert-info mt-4" role="status">
+                <strong>Runner eligibility</strong>
+                <p className="text-sm" style={{ margin: '.4rem 0' }}>Identity check: {identityVerificationStatus.replace(/_/g, ' ')}.</p>
+                <p className="text-sm" style={{ margin: '.4rem 0' }}>Authenticator 2FA: {authenticatorTwoFactorEnabled ? 'enabled' : 'not enabled'}.</p>
+                <p className="text-sm" style={{ margin: '.4rem 0' }}>Payout account: {hasVerifiedPayoutAccount ? 'bank recipient verified' : 'not verified'}.</p>
+                <p className="text-sm" style={{ margin: '.4rem 0' }}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance remains locked until identity verification and authenticator 2FA are completed. Those setup flows are not yet available in staging.'}</p>
+              </div>
+            )}
           </div>
 
           <div className="section-card">
@@ -266,7 +300,7 @@ export default function Profile() {
                 <div className="form-group">
                   <label className="form-label">New Password</label>
                   <div style={{ position: 'relative' }}>
-                    <input type={showPw.new ? 'text' : 'password'} className="form-input" style={{ paddingRight: '2.5rem' }} value={pwForm.newPassword} onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))} required minLength={8} />
+                    <input type={showPw.new ? 'text' : 'password'} className="form-input" style={{ paddingRight: '2.5rem' }} value={pwForm.newPassword} onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))} required minLength={12} />
                     <button type="button" onClick={() => setShowPw(s => ({ ...s, new: !s.new }))} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted, #6b7280)', padding: 0 }} aria-label={showPw.new ? 'Hide password' : 'Show password'}><i className={`fas ${showPw.new ? 'fa-eye-slash' : 'fa-eye'}`} /></button>
                   </div>
                 </div>
