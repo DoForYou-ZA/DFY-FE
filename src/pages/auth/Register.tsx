@@ -6,7 +6,7 @@ import './Auth.css'
 const STEPS = ['Personal Info', 'Role & Details', 'Security']
 const TERMS_VERSION = 'terms-v1'
 const PRIVACY_VERSION = 'privacy-v1'
-const EMAIL_RE = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function extractDobFromId(id: string): string {
   if (id.length < 6) return ''
@@ -41,13 +41,13 @@ export default function Register() {
     setForm(f => ({ ...f, [field]: e.target.value }))
 
   const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\\D/g, '').slice(0, 13)
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 13)
     setForm(f => ({ ...f, idNumber: digits, dateOfBirth: extractDobFromId(digits) }))
   }
 
   const canNext = () => {
     if (step === 1) return !!form.firstName.trim() && !!form.lastName.trim() && EMAIL_RE.test(form.email.trim()) && !!form.phoneNumber.trim()
-    if (step === 2) return !!form.userType && /^\\d{13}$/.test(form.idNumber) && !!form.dateOfBirth && !!form.address.trim()
+    if (step === 2) return !!form.userType && /^\d{13}$/.test(form.idNumber) && !!form.dateOfBirth && !!form.address.trim()
     return false
   }
 
