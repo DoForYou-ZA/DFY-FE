@@ -9,12 +9,37 @@ const PRIVACY_VERSION = 'privacy-v1'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function extractDobFromId(id: string): string {
-  if (id.length < 6) return ''
-  const yy = id.substring(0, 2)
-  const mm = id.substring(2, 4)
-  const dd = id.substring(4, 6)
-  const year = parseInt(yy) > 25 ? `19${yy}` : `20${yy}`
-  return `${year}-${mm}-${dd}`
+  if (!/^\\d{6}/.test(id)) return ''
+  const yy = Number(id.slice(0, 2))
+  const month = Number(id.slice(2, 4))
+  const day = Number(id.slice(4, 6))
+  const today = new Date()
+  const currentCentury = Math.floor(today.getFullYear() / 100) * 100
+  for (const year of [currentCentury + yy, currentCentury + yy - 100]) {
+    const dob = new Date(Date.UTC(year, month - 1, day))
+    if (dob.getUTCFullYear() !== year || dob.getUTCMonth() !== month - 1 || dob.getUTCDate() !== day) return ''
+    let age = today.getUTCFullYear() - year
+    const birthdayPassed = today.getUTCMonth() > month - 1 || (today.getUTCMonth() === month - 1 && today.getUTCDate() >= day)
+    if (!birthdayPassed) age--
+    if (age >= 18 && age <= 110 && dob.getTime() <= Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    }
+  }
+  return ''
+}
+
+function isValidSouthAfricanId(id: string): boolean {
+  if (!/^\\d{13}$/.test(id) || !extractDobFromId(id)) return false
+  let sum = 0
+  for (let i = 0; i < id.length; i++) {
+    let digit = Number(id[i])
+    if (i % 2 === 1) {
+      digit *= 2
+      if (digit > 9) digit -= 9
+    }
+    sum += digit
+  }
+  return sum % 10 === 0
 }
 
 export default function Register() {
@@ -170,12 +195,12 @@ export default function Register() {
                 <div className="form-group">
                   <div className="input-with-icon password-input">
                     <i className="fas fa-lock" />
-                    <input type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Password *" value={form.password} onChange={set('password')} required minLength={12} maxLength={128} autoComplete="new-password" />
+                    <input type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Password *" value={form.password} onChange={set('password')} required minLength={12} maxLength={72} autoComplete="new-password" />
                     <button type="button" className="toggle-password" onClick={() => setShowPassword(!showPassword)}>
                       <i className={`fas fa-eye${showPassword ? '-slash' : ''}`} />
                     </button>
                   </div>
-                  <small className="text-muted text-xs">Use 12–128 characters. A unique passphrase is recommended.</small>
+                  <small className="text-muted text-xs">Use 12–72 characters. A unique passphrase is recommended.</small>
                 </div>
                 <div className="form-group">
                   <div className="input-with-icon password-input">
@@ -205,7 +230,7 @@ export default function Register() {
                 </div>
                 <div className="step-buttons">
                   <button type="button" className="btn btn-secondary" onClick={() => setStep(2)}><i className="fas fa-arrow-left" /> Back</button>
-                  <button type="submit" className="btn btn-primary" disabled={loading || form.password.length < 12 || form.password.length > 128 || form.password !== form.confirmPassword || !termsAccepted || !privacyAccepted}>
+                  <button type="submit" className="btn btn-primary" disabled={loading || form.password.length < 12 || form.password.length > 72 || form.password !== form.confirmPassword || !termsAccepted || !privacyAccepted}>
                     {loading ? <><span className="spinner spinner-sm" /> Creating...</> : 'Create Account'}
                   </button>
                 </div>
