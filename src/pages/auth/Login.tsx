@@ -96,6 +96,9 @@ export default function Login() {
             </button>
           </form>
 
+          <p className="auth-switch" style={{ marginTop: '0.75rem' }}>
+            <a href="mailto:info@doforyou.co.za?subject=Password%20reset%20assistance">Forgot password? Contact support</a>
+          </p>
           <p className="auth-switch">
             Don't have an account? <Link
               to={returnToTaskId ? `/register?returnToTaskId=${encodeURIComponent(returnToTaskId)}` : '/register'}
