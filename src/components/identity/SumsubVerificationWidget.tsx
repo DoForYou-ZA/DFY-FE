@@ -58,6 +58,8 @@ export default function SumsubVerificationWidget({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const callbacksRef = useRef({ onSubmitted })
+  callbacksRef.current = { onSubmitted }
 
   useEffect(() => {
     let cancelled = false
@@ -87,11 +89,11 @@ export default function SumsubVerificationWidget({
           .on('idCheck.onApplicantSubmitted', () => {
             if (cancelled) return
             setSubmitted(true)
-            onSubmitted?.()
+            callbacksRef.current.onSubmitted?.()
           })
           .on('idCheck.onApplicantStatusChanged', () => {
             if (cancelled) return
-            onSubmitted?.()
+            callbacksRef.current.onSubmitted?.()
           })
           .on('idCheck.onError', () => {
             if (!cancelled) setError('The verification provider reported an issue. Your account remains protected; return to your profile for the current status.')
@@ -112,7 +114,7 @@ export default function SumsubVerificationWidget({
       instanceRef.current?.destroy?.()
       instanceRef.current = null
     }
-  }, [handoffCode, onSubmitted])
+  }, [handoffCode])
 
   return (
     <section className="section-card" aria-live="polite">
