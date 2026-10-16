@@ -177,7 +177,7 @@ export default function Register() {
                     <small className="text-muted text-xs">Date of birth auto-fills from ID</small>
                   </div>
                   <div className="form-group">
-                    <input type="date" className="form-input" placeholder="Date of Birth *" value={form.dateOfBirth} onChange={set('dateOfBirth')} required />
+                    <input type="date" className="form-input" placeholder="Date of Birth *" value={form.dateOfBirth} readOnly required />
                   </div>
                 </div>
                 <div className="form-group">
