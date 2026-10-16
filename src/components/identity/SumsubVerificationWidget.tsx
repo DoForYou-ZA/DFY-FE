@@ -84,7 +84,13 @@ export default function SumsubVerificationWidget({
 
         const instance = window.snsWebSdk
           .init(response.accessToken, async () => {
-            throw new Error('This verification session has expired. Return to your account and start a new session.')
+            const refreshed = await identityVerificationApi.refresh()
+            const refreshBody = refreshed.data
+            const refreshData = refreshBody?.data || refreshBody
+            if (refreshBody?.success === false || !refreshData?.accessToken) {
+              throw new Error(refreshBody?.message || refreshData?.message || 'This verification session could not be refreshed. Return to your account and check its status.')
+            }
+            return refreshData.accessToken as string
           })
           .withConf({ lang: 'en' })
           .withOptions({ addViewportTag: false, adaptIframeHeight: true })
