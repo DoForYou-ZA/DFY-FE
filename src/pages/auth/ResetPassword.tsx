@@ -1,18 +1,20 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useLayoutEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { authApi } from '../../api'
 import './Auth.css'
 
 export default function ResetPassword() {
   const [params] = useSearchParams()
-  const token = params.get('token') || ''
+  const token = params.get('token') || new URLSearchParams(window.location.hash.replace(/^#/, '')).get('token') || ''
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
+  // The reset token is supplied in the fragment so it is never sent in the HTTP request.
+  // Remove it synchronously before paint and before the user can copy/share the URL.
+  useLayoutEffect(() => {
     if (token) window.history.replaceState(window.history.state, '', window.location.pathname)
   }, [token])
 
