@@ -81,6 +81,7 @@ export default function Profile() {
   const [totpSecret, setTotpSecret] = useState('')
   const [totpProvisioningUri, setTotpProvisioningUri] = useState('')
   const [totpCurrentPassword, setTotpCurrentPassword] = useState('')
+  const [totpGoogleIdToken, setTotpGoogleIdToken] = useState('')
   const [totpCode, setTotpCode] = useState('')
   const [totpRecoveryCodes, setTotpRecoveryCodes] = useState<string[]>([])
   const [totpLoading, setTotpLoading] = useState(false)
@@ -328,11 +329,19 @@ export default function Profile() {
   const handleTotpSetup = async () => {
     setTotpLoading(true); setTotpError(''); setTotpMessage('')
     try {
-      const response = await authApi.setupTwoFactor({ currentPassword: totpCurrentPassword || undefined })
+      if (hasGoogleLogin && !totpGoogleIdToken) {
+        setTotpError('Confirm your linked Google account before setting up an authenticator.')
+        return
+      }
+      const response = await authApi.setupTwoFactor({
+        currentPassword: hasGoogleLogin ? undefined : totpCurrentPassword || undefined,
+        googleIdToken: hasGoogleLogin ? totpGoogleIdToken : undefined,
+      })
       const data = response.data?.data || response.data
       setTotpSecret(data.secret || '')
       setTotpProvisioningUri(data.provisioningUri || '')
       setTotpCode('')
+      setTotpGoogleIdToken('')
       setTotpMessage('Add this key to your authenticator app, then enter a current six-digit code to enable it.')
     } catch (err: any) {
       setTotpError(err.response?.data?.message || 'Authenticator setup could not start.')
@@ -610,12 +619,21 @@ export default function Profile() {
             {!totpConfigured && <p className="text-muted text-sm">Authenticator enrollment is disabled on this staging API until its encryption key is configured.</p>}
             {totpConfigured && !totpEnabled && !totpSecret && (
               <>
-                <div className="form-group">
-                  <label className="form-label">Current password (password accounts)</label>
-                  <input type="password" className="form-input" value={totpCurrentPassword} onChange={e => setTotpCurrentPassword(e.target.value)} autoComplete="current-password" />
-                  <small className="text-muted text-xs">Google sign-in accounts can start enrollment after signing in within the last ten minutes.</small>
-                </div>
-                <button type="button" className="btn btn-primary" onClick={handleTotpSetup} disabled={totpLoading}>
+                {hasGoogleLogin ? (
+                  <div className="form-group">
+                    <p className="text-muted text-sm">Confirm control of your linked Google account for this authenticator setup.</p>
+                    <GoogleIdentityButton
+                      onCredential={token => { setTotpGoogleIdToken(token); setTotpError(''); setTotpMessage('Google account confirmed. Continue to set up authenticator.') }}
+                      disabled={totpLoading}
+                    />
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <label className="form-label">Current password</label>
+                    <input type="password" className="form-input" value={totpCurrentPassword} onChange={e => setTotpCurrentPassword(e.target.value)} autoComplete="current-password" />
+                  </div>
+                )}
+                <button type="button" className="btn btn-primary" onClick={handleTotpSetup} disabled={totpLoading || (hasGoogleLogin ? !totpGoogleIdToken : !totpCurrentPassword)}>
                   {totpLoading ? 'Starting…' : 'Set up authenticator'}
                 </button>
               </>
