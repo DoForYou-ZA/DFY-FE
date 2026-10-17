@@ -1,20 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { authApi } from '../../api'
 import './Auth.css'
 
 export default function VerifyEmail() {
   const [params] = useSearchParams()
-  const token = params.get('token') || ''
+  const token = params.get('token') || new URLSearchParams(window.location.hash.replace(/^#/, '')).get('token') || ''
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(token ? 'loading' : 'error')
   const [message, setMessage] = useState(token ? 'Verifying your email address…' : 'This verification link is missing its token.')
+  const verificationStarted = useRef(false)
+
+  // Remove secret material before the browser paints or any API request is sent.
+  useLayoutEffect(() => {
+    if (token) window.history.replaceState(window.history.state, '', window.location.pathname)
+  }, [token])
 
   useEffect(() => {
-    if (!token) return
-    window.history.replaceState(window.history.state, '', window.location.pathname)
-    let active = true
+    if (!token || verificationStarted.current) return
+    verificationStarted.current = true
     authApi.verifyEmail(token).then((response) => {
-      if (!active) return
       if (response.data?.success) {
         setStatus('success')
         setMessage(response.data.message || 'Your email is verified. You can sign in.')
@@ -23,11 +27,9 @@ export default function VerifyEmail() {
         setMessage(response.data?.message || 'This verification link is invalid or has expired.')
       }
     }).catch((error: any) => {
-      if (!active) return
       setStatus('error')
       setMessage(error.response?.data?.message || 'This verification link is invalid or has expired. Request a new one.')
     })
-    return () => { active = false }
   }, [token])
 
   return (
